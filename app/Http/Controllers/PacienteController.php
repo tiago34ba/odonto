@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePatientRequest;
 use App\Http\Requests\UpdatePatientRequest;
-use App\Models\Patient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\Paciente;
 
 class PacienteController extends Controller
 {
@@ -21,7 +20,7 @@ class PacienteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
-        $patients = Patient::query()
+        $patients = Paciente::query()
             ->when($request->filled('name'), fn ($query, $name) => $query->where('name', 'like', "%{$name}%"))
             ->when($request->filled('convenio'), fn ($query, $convenio) => $query->where('convenio', $convenio))
             ->orderBy('name')
@@ -36,10 +35,9 @@ class PacienteController extends Controller
      * @param StorePatientRequest $request
      * @return JsonResponse
      */
-    public function store(UpdatePatientRequest $request): JsonResponse
+    public function store(StorePatientRequest $request): JsonResponse
     {
-        $patient = Patient::create($request->validated());
-
+        $patient = Paciente::create($request->validated());
         return response()->json($patient, Response::HTTP_CREATED);
     }
 
@@ -49,7 +47,7 @@ class PacienteController extends Controller
      * @param Patient $patient
      * @return JsonResponse
      */
-    public function show(Patient $patient): JsonResponse
+    public function show(Paciente $patient): JsonResponse
     {
         return response()->json($patient);
     }
@@ -61,7 +59,7 @@ class PacienteController extends Controller
      * @param Patient $patient
      * @return JsonResponse
      */
-    public function update(UpdatePatientRequest $request, Patient $patient): JsonResponse
+    public function update(UpdatePatientRequest $request, Paciente $patient): JsonResponse
     {
         $patient->update($request->validated());
 
@@ -74,7 +72,7 @@ class PacienteController extends Controller
      * @param Patient $patient
      * @return JsonResponse
      */
-    public function destroy(Patient $patient): JsonResponse
+    public function destroy(Paciente $patient): JsonResponse
     {
         $patient->delete();
 

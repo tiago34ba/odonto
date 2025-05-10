@@ -5,36 +5,39 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Patient extends Model
+class Paciente extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
+        'id',
         'name',
-        'convenio',
-        'telefone',
-        'idade',
-        'data_nascimento',
+        'phone',
+        'insurance',
+        'age',
+        'nascimento',
         'responsavel',
-        'cpf_responsavel',
-        'celular',
-        'estado',
-        'sexo',
-        'profissao',
-        'estado_civil',
-        'tipo_sanguineo',
+        'cpfResponsavel',
         'pessoa',
-        'cpf_cnpj',
+        'cpfCnpj',
         'email',
         'cep',
         'rua',
         'numero',
         'complemento',
         'bairro',
+        'cidade',
+        'estado',
+        'tipoSanguineo',
+        'sexo',
+        'profissao',
+        'estadoCivil',
+        'telefone2',
         'observacoes',
-    ];
-
-    protected $casts = [
-        'data_nascimento' => 'date',
     ];
 }
