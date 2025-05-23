@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Paciente;
+use Illuminate\Support\Facades\Http;
 
 class PacienteController extends Controller
 {
@@ -26,7 +27,7 @@ class PacienteController extends Controller
             ->orderBy('name')
             ->paginate($perPage);
 
-        return response()->json($patients);
+    return response()->json($patients);
     }
 
     /**
@@ -40,6 +41,7 @@ class PacienteController extends Controller
         $patient = Paciente::create($request->validated());
         return response()->json($patient, Response::HTTP_CREATED);
     }
+
 
     /**
      * Display the specified patient.
@@ -206,4 +208,5 @@ class PacienteController extends Controller
             ],
         ]);
     }
+
 }
