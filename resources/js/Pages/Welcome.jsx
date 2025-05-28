@@ -27,8 +27,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
                     {/* Logo */}
                     <div className="flex-shrink-0">
-                        <Link href="/" className="text-2xl font-bold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                            SeuLogo
+                        <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            {/* Logo Genérica de Tecnologia */}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <rect x="7" y="7" width="10" height="10" rx="2" strokeWidth="2" />
+                                <path strokeWidth="2" d="M11 11h2v2h-2z" />
+                                <path strokeWidth="2" d="M4 8V4m0 0h4M4 4l4 4M20 8V4m0 0h-4m4 0l-4 4M4 16v4m0 0h4m-4 0l4-4M20 16v4m0 0h-4m4 0l-4-4" />
+                            </svg>
+                            <span className="hidden sm:inline">Ssait Odonto</span>
                         </Link>
                     </div>
 
