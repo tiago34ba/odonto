@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('pessoa', 20)->nullable(); // Ex: Física, Jurídica
             $table->string('cpf_cnpj')->nullable()->unique(); // CPF ou CNPJ, único se preenchido
             $table->string('email')->nullable()->unique(); // Email, único se preenchido
-            $table->string('cep', 9)->nullable(); // Formato XXXXX-XXX
+            $table->string('cep', 20)->nullable(); // Aumente para 20 caracteres
             $table->string('rua')->nullable();
             $table->string('numero')->nullable();
             $table->string('complemento')->nullable();
