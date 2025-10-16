@@ -17,7 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        // Middlewares de segurança para API
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ApiSecurityMiddleware::class,
+        ]);
+
+        $middleware->api(append: [
+            \App\Http\Middleware\DataAuditMiddleware::class,
+            \App\Http\Middleware\SensitiveDataValidationMiddleware::class,
+        ]);
+
+        // Rate limiting global
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

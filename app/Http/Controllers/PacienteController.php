@@ -21,13 +21,26 @@ class PacienteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
+        
         $patients = Paciente::query()
-            ->when($request->filled('name'), fn ($query, $name) => $query->where('name', 'like', "%{$name}%"))
-            ->when($request->filled('convenio'), fn ($query, $convenio) => $query->where('convenio', $convenio))
+            ->when($request->filled('name'), fn ($query, $name) => $query->byName($name))
+            ->when($request->filled('convenio'), fn ($query, $convenio) => $query->byConvenio($convenio))
+            ->when($request->filled('min_age'), fn ($query) => $query->byAgeRange($request->input('min_age'), $request->input('max_age', 120)))
             ->orderBy('name')
             ->paginate($perPage);
 
-    return response()->json($patients);
+        // Retorna dados sem criptografia/mascaramento
+        return response()->json([
+            'data' => $patients->items(),
+            'pagination' => [
+                'current_page' => $patients->currentPage(),
+                'last_page' => $patients->lastPage(),
+                'per_page' => $patients->perPage(),
+                'total' => $patients->total(),
+                'from' => $patients->firstItem(),
+                'to' => $patients->lastItem(),
+            ]
+        ]);
     }
 
     /**
@@ -42,11 +55,10 @@ class PacienteController extends Controller
         return response()->json($patient, Response::HTTP_CREATED);
     }
 
-
     /**
      * Display the specified patient.
      *
-     * @param Patient $patient
+     * @param Paciente $patient
      * @return JsonResponse
      */
     public function show(Paciente $patient): JsonResponse
@@ -58,26 +70,24 @@ class PacienteController extends Controller
      * Update the specified patient in storage.
      *
      * @param UpdatePatientRequest $request
-     * @param Patient $patient
+     * @param Paciente $patient
      * @return JsonResponse
      */
     public function update(UpdatePatientRequest $request, Paciente $patient): JsonResponse
     {
         $patient->update($request->validated());
-
         return response()->json($patient);
     }
 
     /**
      * Remove the specified patient from storage.
      *
-     * @param Patient $patient
+     * @param Paciente $patient
      * @return JsonResponse
      */
     public function destroy(Paciente $patient): JsonResponse
     {
         $patient->delete();
-
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
@@ -209,4 +219,113 @@ class PacienteController extends Controller
         ]);
     }
 
+    /**
+     * Get patient statistics for dashboard.
+     *
+     * @return JsonResponse
+     */
+    public function statistics(): JsonResponse
+    {
+        $stats = [
+            'total_patients' => Paciente::count(),
+            'patients_by_convenio' => Paciente::selectRaw('convenio, count(*) as total')
+                ->groupBy('convenio')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'patients_by_age_group' => [
+                '0-17' => Paciente::whereBetween('idade', [0, 17])->count(),
+                '18-30' => Paciente::whereBetween('idade', [18, 30])->count(),
+                '31-50' => Paciente::whereBetween('idade', [31, 50])->count(),
+                '51-70' => Paciente::whereBetween('idade', [51, 70])->count(),
+                '70+' => Paciente::where('idade', '>', 70)->count(),
+            ],
+            'patients_by_gender' => Paciente::selectRaw('sexo, count(*) as total')
+                ->groupBy('sexo')
+                ->get(),
+            'recent_patients' => Paciente::orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(['id', 'name', 'created_at'])
+        ];
+
+        return response()->json([
+            'statistics' => $stats,
+            'generated_at' => now()->toISOString()
+        ]);
+    }
+
+    /**
+     * Search patients with advanced filters.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $query = Paciente::query();
+
+        // Filtros de busca
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('cpf_cnpj', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('convenio')) {
+            $query->byConvenio($request->input('convenio'));
+        }
+
+        if ($request->filled('sexo')) {
+            $query->where('sexo', $request->input('sexo'));
+        }
+
+        if ($request->filled('min_age') || $request->filled('max_age')) {
+            $minAge = $request->input('min_age', 0);
+            $maxAge = $request->input('max_age', 120);
+            $query->byAgeRange($minAge, $maxAge);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->input('estado'));
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $patients = $query->orderBy('name')->paginate($perPage);
+
+        return response()->json([
+            'data' => $patients->items(),
+            'pagination' => [
+                'current_page' => $patients->currentPage(),
+                'last_page' => $patients->lastPage(),
+                'per_page' => $patients->perPage(),
+                'total' => $patients->total(),
+            ],
+            'filters' => $request->only(['search', 'convenio', 'sexo', 'min_age', 'max_age', 'estado'])
+        ]);
+    }
+
+    /**
+     * Export patients data (sem mascaramento).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $format = $request->input('format', 'json');
+        
+        $patients = Paciente::orderBy('name')->get();
+
+        return response()->json([
+            'data' => $patients,
+            'export_info' => [
+                'format' => $format,
+                'total_records' => $patients->count(),
+                'exported_at' => now()->toISOString(),
+                'exported_by' => \Illuminate\Support\Facades\Auth::user()?->email ?? 'system'
+            ]
+        ]);
+    }
 }

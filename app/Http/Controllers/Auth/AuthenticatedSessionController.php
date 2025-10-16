@@ -33,8 +33,20 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redireciona para a rota desejada após o login
-        return redirect()->to('http://127.0.0.1:3000/');
+        // Redireciona para o dashboard externo (dashboard-odonto)
+        $dashboardUrl = env('DASHBOARD_URL', 'http://localhost:3001');
+        
+        // Opcionalmente, você pode passar parâmetros de autenticação para o dashboard externo
+        $user = $request->user();
+        $authParams = http_build_query([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'auth_token' => $request->session()->getId(), // ou gerar um token específico
+        ]);
+        
+        $redirectUrl = $dashboardUrl . '?' . $authParams;
+        
+        return redirect()->to($redirectUrl);
     }
 
     /**

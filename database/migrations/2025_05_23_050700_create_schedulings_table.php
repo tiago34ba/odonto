@@ -11,22 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('suppliers', function (Blueprint $table) {
+        Schema::create('schedulings', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone');
-            $table->string('cnpj')->nullable();
-            $table->string('pix')->nullable();
-            $table->string('pix_key_type')->nullable();
-            $table->string('street')->nullable();
-            $table->string('number')->nullable();
-            $table->string('complement')->nullable();
-            $table->string('neighborhood')->nullable();
-            $table->string('city')->nullable();
-            $table->string('state')->nullable();
-            $table->string('cep')->nullable();
+            $table->unsignedBigInteger('patient_id');
+            $table->unsignedBigInteger('professional_id');
+            $table->unsignedBigInteger('procedure_id');
+            $table->date('date');
+            $table->string('time', 5); // HH:MM
+            $table->boolean('return')->default(false);
+            $table->text('obs')->nullable();
             $table->timestamps();
+            
+            $table->index(['date', 'professional_id']);
+            $table->index(['patient_id', 'date']);
         });
     }
 
@@ -35,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('schedulings');
     }
 };

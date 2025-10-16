@@ -310,7 +310,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             { href: '#', label: 'Soluções' },
                             { href: '#', label: 'Serviços' },
                             { href: '#planos', label: 'Planos' },
-                            { href: '#', label: 'Blog e Conteúdos' },
+                            { href: '#', label: 'Sobre' },
                         ].map(item => (
                             <Link
                                 key={item.label}
@@ -325,12 +325,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     {/* Auth Links */}
                     <nav className="flex-shrink-0 flex items-center space-x-4">
                         {auth.user ? (
-                            <Link
-                                href={route('dashboard')}
+                            <a
+                                href="http://localhost:3001"
                                 className="rounded-md px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                             >
                                 Dashboard
-                            </Link>
+                            </a>
                         ) : (
                             <>
                                 <Link
