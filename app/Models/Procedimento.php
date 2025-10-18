@@ -104,3 +104,8 @@ class Procedimento extends Model
         return 'R$ ' . number_format($this->valor, 2, ',', '.');
     }
 }
+doAttribute(): string
+    {
+        return 'R$ ' . number_format($this->valor, 2, ',', '.');
+    }
+}
