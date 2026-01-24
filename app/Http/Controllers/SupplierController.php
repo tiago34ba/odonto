@@ -13,7 +13,14 @@ class SupplierController extends Controller
      */
     public function index()
     {
-        return response()->json(Supplier::all());
+        $suppliers = Supplier::all();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Fornecedores listados com sucesso',
+            'data' => $suppliers,
+            'total' => $suppliers->count()
+        ]);
     }
 
     /**

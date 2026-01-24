@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Models\Paciente;
 use Illuminate\Support\Facades\Http;
 
+
 class PacienteController extends Controller
 {
     /**
@@ -21,7 +22,7 @@ class PacienteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
-        
+
         $patients = Paciente::query()
             ->when($request->filled('name'), fn ($query, $name) => $query->byName($name))
             ->when($request->filled('convenio'), fn ($query, $convenio) => $query->byConvenio($convenio))
@@ -51,7 +52,36 @@ class PacienteController extends Controller
      */
     public function store(StorePatientRequest $request): JsonResponse
     {
-        $patient = Paciente::create($request->validated());
+        $validated = $request->validated();
+
+        // Mapear campos do frontend para o backend
+        $mappedData = [
+            'name' => $validated['name'],
+            'convenio' => $validated['insurance'] ?? null,
+            'telefone' => $validated['phone'] ?? null,
+            'idade' => $validated['age'] ?? null,
+            'data_nascimento' => $validated['nascimento'],
+            'responsavel' => $validated['responsavel'] ?? null,
+            'cpf_responsavel' => $validated['cpfResponsavel'] ?? null,
+            'celular' => $validated['telefone2'] ?? null,
+            'estado' => $validated['estado'] ?? null,
+            'sexo' => $validated['sexo'] ?? null,
+            'profissao' => $validated['profissao'] ?? null,
+            'estado_civil' => $validated['estadoCivil'] ?? null,
+            'tipo_sanguineo' => $validated['tipoSanguineo'] ?? null,
+            'pessoa' => $validated['pessoa'] ?? null,
+            'cpf_cnpj' => $validated['cpfCnpj'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'cep' => $validated['cep'] ?? null,
+            'rua' => $validated['rua'] ?? null,
+            'numero' => $validated['numero'] ?? null,
+            'complemento' => $validated['complemento'] ?? null,
+            'bairro' => $validated['bairro'] ?? null,
+            'cidade' => $validated['cidade'] ?? null,
+            'observacoes' => $validated['observacoes'] ?? null,
+        ];
+
+        $patient = Paciente::create($mappedData);
         return response()->json($patient, Response::HTTP_CREATED);
     }
 
@@ -315,7 +345,7 @@ class PacienteController extends Controller
     public function export(Request $request): JsonResponse
     {
         $format = $request->input('format', 'json');
-        
+
         $patients = Paciente::orderBy('name')->get();
 
         return response()->json([

@@ -1,0 +1,219 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // Índices para tabela pacientes
+        Schema::table('pacientes', function (Blueprint $table) {
+            if (!$this->indexExists('pacientes', 'idx_pacientes_name')) {
+                $table->index('name', 'idx_pacientes_name');
+            }
+            if (!$this->indexExists('pacientes', 'idx_pacientes_email')) {
+                $table->index('email', 'idx_pacientes_email');
+            }
+            if (!$this->indexExists('pacientes', 'idx_pacientes_telefone')) {
+                $table->index('telefone', 'idx_pacientes_telefone');
+            }
+            if (!$this->indexExists('pacientes', 'idx_pacientes_cpf_cnpj')) {
+                $table->index('cpf_cnpj', 'idx_pacientes_cpf_cnpj');
+            }
+            if (!$this->indexExists('pacientes', 'idx_pacientes_created_at')) {
+                $table->index('created_at', 'idx_pacientes_created_at');
+            }
+        });
+
+        // Índices para tabela agendamentos
+        Schema::table('agendamentos', function (Blueprint $table) {
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_data')) {
+                $table->index('data_agendamento', 'idx_agendamentos_data');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_status')) {
+                $table->index('status', 'idx_agendamentos_status');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_paciente_id')) {
+                $table->index('paciente_id', 'idx_agendamentos_paciente_id');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_funcionario_id')) {
+                $table->index('funcionario_id', 'idx_agendamentos_funcionario_id');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_procedimento_id')) {
+                $table->index('procedimento_id', 'idx_agendamentos_procedimento_id');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_data_status')) {
+                $table->index(['data_agendamento', 'status'], 'idx_agendamentos_data_status');
+            }
+            if (!$this->indexExists('agendamentos', 'idx_agendamentos_created_at')) {
+                $table->index('created_at', 'idx_agendamentos_created_at');
+            }
+        });
+
+        // Índices para tabela funcionarios
+        Schema::table('funcionarios', function (Blueprint $table) {
+            if (!$this->indexExists('funcionarios', 'idx_funcionarios_nome')) {
+                $table->index('nome', 'idx_funcionarios_nome');
+            }
+            if (!$this->indexExists('funcionarios', 'idx_funcionarios_email')) {
+                $table->index('email', 'idx_funcionarios_email');
+            }
+            if (!$this->indexExists('funcionarios', 'idx_funcionarios_especialidade')) {
+                $table->index('especialidade', 'idx_funcionarios_especialidade');
+            }
+            if (!$this->indexExists('funcionarios', 'idx_funcionarios_ativo')) {
+                $table->index('ativo', 'idx_funcionarios_ativo');
+            }
+        });
+
+        // Índices para tabela procedimentos
+        Schema::table('procedimentos', function (Blueprint $table) {
+            if (!$this->indexExists('procedimentos', 'idx_procedimentos_nome')) {
+                $table->index('nome', 'idx_procedimentos_nome');
+            }
+            if (!$this->indexExists('procedimentos', 'idx_procedimentos_valor')) {
+                $table->index('valor', 'idx_procedimentos_valor');
+            }
+            if (!$this->indexExists('procedimentos', 'idx_procedimentos_ativo')) {
+                $table->index('ativo', 'idx_procedimentos_ativo');
+            }
+            if (!$this->indexExists('procedimentos', 'idx_procedimentos_categoria')) {
+                $table->index('categoria', 'idx_procedimentos_categoria');
+            }
+        });
+
+        // Índices para tabela convenios (se existir)
+        if (Schema::hasTable('convenios')) {
+            Schema::table('convenios', function (Blueprint $table) {
+                if (!$this->indexExists('convenios', 'idx_convenios_nome')) {
+                    $table->index('nome', 'idx_convenios_nome');
+                }
+                if (!$this->indexExists('convenios', 'idx_convenios_ativo')) {
+                    $table->index('ativo', 'idx_convenios_ativo');
+                }
+            });
+        }
+
+        // Índices para tabela formas_pagamento (se existir)
+        if (Schema::hasTable('formas_pagamento')) {
+            Schema::table('formas_pagamento', function (Blueprint $table) {
+                if (!$this->indexExists('formas_pagamento', 'idx_formas_pagamento_nome')) {
+                    $table->index('nome', 'idx_formas_pagamento_nome');
+                }
+                if (!$this->indexExists('formas_pagamento', 'idx_formas_pagamento_ativo')) {
+                    $table->index('ativo', 'idx_formas_pagamento_ativo');
+                }
+            });
+        }
+
+        // Índices compostos para consultas mais complexas
+        try {
+            // Agendamentos por funcionário e data
+            DB::statement('CREATE INDEX IF NOT EXISTS idx_agendamentos_funcionario_data ON agendamentos (funcionario_id, data_agendamento)');
+            
+            // Agendamentos por paciente e status
+            DB::statement('CREATE INDEX IF NOT EXISTS idx_agendamentos_paciente_status ON agendamentos (paciente_id, status)');
+            
+            // Agendamentos para relatórios financeiros
+            DB::statement('CREATE INDEX IF NOT EXISTS idx_agendamentos_financial ON agendamentos (data_agendamento, status, procedimento_id)');
+            
+            // Pacientes por data de cadastro e status
+            DB::statement('CREATE INDEX IF NOT EXISTS idx_pacientes_cadastro ON pacientes (created_at, ativo)');
+
+        } catch (\Exception $e) {
+            // Ignorar erros se índices já existirem
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // Remover índices das tabelas
+        Schema::table('pacientes', function (Blueprint $table) {
+            $table->dropIndex('idx_pacientes_nome');
+            $table->dropIndex('idx_pacientes_email');
+            $table->dropIndex('idx_pacientes_telefone');
+            $table->dropIndex('idx_pacientes_cpf');
+            $table->dropIndex('idx_pacientes_created_at');
+        });
+
+        Schema::table('agendamentos', function (Blueprint $table) {
+            $table->dropIndex('idx_agendamentos_data');
+            $table->dropIndex('idx_agendamentos_status');
+            $table->dropIndex('idx_agendamentos_paciente_id');
+            $table->dropIndex('idx_agendamentos_funcionario_id');
+            $table->dropIndex('idx_agendamentos_procedimento_id');
+            $table->dropIndex('idx_agendamentos_data_status');
+            $table->dropIndex('idx_agendamentos_created_at');
+        });
+
+        Schema::table('funcionarios', function (Blueprint $table) {
+            $table->dropIndex('idx_funcionarios_nome');
+            $table->dropIndex('idx_funcionarios_email');
+            $table->dropIndex('idx_funcionarios_especialidade');
+            $table->dropIndex('idx_funcionarios_ativo');
+        });
+
+        Schema::table('procedimentos', function (Blueprint $table) {
+            $table->dropIndex('idx_procedimentos_nome');
+            $table->dropIndex('idx_procedimentos_valor');
+            $table->dropIndex('idx_procedimentos_ativo');
+            $table->dropIndex('idx_procedimentos_categoria');
+        });
+
+        if (Schema::hasTable('convenios')) {
+            Schema::table('convenios', function (Blueprint $table) {
+                $table->dropIndex('idx_convenios_nome');
+                $table->dropIndex('idx_convenios_ativo');
+            });
+        }
+
+        if (Schema::hasTable('formas_pagamento')) {
+            Schema::table('formas_pagamento', function (Blueprint $table) {
+                $table->dropIndex('idx_formas_pagamento_nome');
+                $table->dropIndex('idx_formas_pagamento_ativo');
+            });
+        }
+
+        // Remover índices compostos
+        try {
+            DB::statement('DROP INDEX IF EXISTS idx_agendamentos_funcionario_data');
+            DB::statement('DROP INDEX IF EXISTS idx_agendamentos_paciente_status');
+            DB::statement('DROP INDEX IF EXISTS idx_agendamentos_financial');
+            DB::statement('DROP INDEX IF EXISTS idx_pacientes_cadastro');
+        } catch (\Exception $e) {
+            // Ignorar erros
+        }
+    }
+
+    /**
+     * Verificar se um índice existe
+     */
+    private function indexExists(string $table, string $index): bool
+    {
+        try {
+            $connection = Schema::getConnection();
+            $database = $connection->getDatabaseName();
+            
+            $result = DB::select("
+                SELECT COUNT(*) as count 
+                FROM information_schema.statistics 
+                WHERE table_schema = ? 
+                AND table_name = ? 
+                AND index_name = ?
+            ", [$database, $table, $index]);
+            
+            return $result[0]->count > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+};

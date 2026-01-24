@@ -14,7 +14,13 @@ class GroupAnamneseController extends Controller
     public function index()
     {
         $groups = GroupAnamnese::all();
-        return response()->json($groups);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Grupos de anamnese listados com sucesso',
+            'data' => $groups,
+            'total' => $groups->count()
+        ]);
     }
 
     /**

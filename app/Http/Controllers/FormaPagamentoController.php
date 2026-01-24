@@ -14,7 +14,13 @@ class FormaPagamentoController extends Controller
     public function index()
     {
         $formas = FormaPagamento::all();
-        return response()->json($formas);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Formas de pagamento listadas com sucesso',
+            'data' => $formas,
+            'total' => $formas->count()
+        ]);
     }
 
     /**

@@ -15,9 +15,7 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
-    // Redireciona para o dashboard externo em vez de exibir o dashboard interno
-    $dashboardUrl = env('DASHBOARD_URL', 'http://localhost:3001');
-    return redirect()->to($dashboardUrl);
+    return Inertia::render('Dashboard');
 })->name('dashboard');
 
 Route::middleware('auth')->group(function () {

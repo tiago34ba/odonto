@@ -14,7 +14,13 @@ class ProcedureController extends Controller
     public function index()
     {
         $procedures = Procedure::all();
-        return view('procedures.index', compact('procedures'));
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Procedimentos listados com sucesso',
+            'data' => $procedures,
+            'total' => $procedures->count()
+        ]);
     }
 
     /**

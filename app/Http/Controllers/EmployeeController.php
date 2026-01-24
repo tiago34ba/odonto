@@ -11,7 +11,13 @@ class EmployeeController extends Controller
     public function index()
     {
         $employees = Employee::all();
-        return response()->json($employees);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Funcionários listados com sucesso',
+            'data' => $employees,
+            'total' => $employees->count()
+        ]);
     }
 
     public function store(EmployeeRequest $request)

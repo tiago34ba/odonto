@@ -14,7 +14,13 @@ class AnamneseController extends Controller
     public function index()
     {
         $anamneses = Anamnese::all();
-        return view('anamneses.index', compact('anamneses'));
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Anamneses listadas com sucesso',
+            'data' => $anamneses,
+            'total' => $anamneses->count()
+        ]);
     }
 
     /**

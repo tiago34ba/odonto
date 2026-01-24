@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Middlewares de segurança para API
         $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\ApiSecurityMiddleware::class,
         ]);
 
@@ -28,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Rate limiting global
-        $middleware->throttleApi();
+        $middleware->throttleApi('api');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -23,7 +23,7 @@ class StorePatientRequest extends FormRequest
             'cpfResponsavel' => 'nullable|string|max:14',
             'pessoa' => 'nullable|string|in:Física,Jurídica',
             'cpfCnpj' => 'nullable|string|max:18',
-            'email' => 'nullable|email|max:255|unique:patients,email',
+            'email' => 'nullable|email|max:255|unique:pacientes,email',
             'cep' => 'nullable|string|max:9',
             'rua' => 'nullable|string|max:255',
             'numero' => 'nullable|string|max:10',

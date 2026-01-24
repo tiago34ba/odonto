@@ -12,7 +12,14 @@ class AgreementController extends Controller
      */
     public function index()
     {
-        //
+        $agreements = Agreement::all();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Convênios listados com sucesso',
+            'data' => $agreements,
+            'total' => $agreements->count()
+        ]);
     }
 
     /**
