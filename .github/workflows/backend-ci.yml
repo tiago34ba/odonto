@@ -1,0 +1,79 @@
+name: Backend CI and Health Smoke
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Laravel tests
+    runs-on: ubuntu-latest
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run tests
+        run: php artisan test --without-tty
+
+      - name: Dependency audit
+        run: composer audit
+
+  post_deploy_smoke:
+    name: Post-deploy backend smoke
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate backend URL variable
+        run: |
+          if [ -z "${{ vars.BACKEND_PUBLIC_URL }}" ]; then
+            echo "BACKEND_PUBLIC_URL repository variable is required for post-deploy smoke."
+            exit 1
+          fi
+
+      - name: Check health endpoint
+        run: curl --fail --silent --show-error "${{ vars.BACKEND_PUBLIC_URL }}/up" > /dev/null
+
+      - name: Check API health endpoint
+        run: curl --fail --silent --show-error "${{ vars.BACKEND_PUBLIC_URL }}/api/dashboard/system-health" > /dev/null

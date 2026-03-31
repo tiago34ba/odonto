@@ -1,0 +1,255 @@
+﻿TABLE_NAME	ORDINAL_POSITION	COLUMN_NAME	COLUMN_TYPE	IS_NULLABLE	COLUMN_KEY	COLUMN_DEFAULT	EXTRA
+agreements	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+agreements	2	name	varchar(255)	NO	MUL	NULL	
+agreements	3	phone	varchar(255)	YES		NULL	
+agreements	4	clinic_commission	decimal(5,2)	YES		NULL	
+agreements	5	created_at	timestamp	YES		NULL	
+agreements	6	updated_at	timestamp	YES		NULL	
+anamneses	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+anamneses	2	name	varchar(255)	NO		NULL	
+anamneses	3	group	varchar(255)	NO		NULL	
+anamneses	4	description	varchar(255)	YES		NULL	
+anamneses	5	created_at	timestamp	YES		NULL	
+anamneses	6	updated_at	timestamp	YES		NULL	
+cache	1	key	varchar(255)	NO	PRI	NULL	
+cache	2	value	mediumtext	NO		NULL	
+cache	3	expiration	int	NO		NULL	
+cache_locks	1	key	varchar(255)	NO	PRI	NULL	
+cache_locks	2	owner	varchar(255)	NO		NULL	
+cache_locks	3	expiration	int	NO		NULL	
+contas_pagars	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+contas_pagars	2	codigo	varchar(255)	NO	UNI	NULL	
+contas_pagars	3	descricao	varchar(255)	NO		NULL	
+contas_pagars	4	supplier_id	bigint unsigned	YES	MUL	NULL	
+contas_pagars	5	categoria	varchar(255)	NO		NULL	
+contas_pagars	6	valor_original	decimal(10,2)	NO		NULL	
+contas_pagars	7	valor_pago	decimal(10,2)	NO		0.00	
+contas_pagars	8	valor_pendente	decimal(10,2)	NO		NULL	
+contas_pagars	9	data_vencimento	date	NO		NULL	
+contas_pagars	10	data_pagamento	date	YES		NULL	
+contas_pagars	11	status	enum('Pendente','Vencido','Pago','Parcial')	NO	MUL	Pendente	
+contas_pagars	12	prioridade	enum('Baixa','Média','Alta','Crítica')	NO		Média	
+contas_pagars	13	forma_pagamento	varchar(255)	YES		NULL	
+contas_pagars	14	observacoes	text	YES		NULL	
+contas_pagars	15	created_at	timestamp	YES		NULL	
+contas_pagars	16	updated_at	timestamp	YES		NULL	
+contas_recebers	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+contas_recebers	2	codigo	varchar(255)	NO	UNI	NULL	
+contas_recebers	3	paciente_id	bigint unsigned	NO	MUL	NULL	
+contas_recebers	4	procedure_id	bigint unsigned	NO	MUL	NULL	
+contas_recebers	5	scheduling_id	bigint unsigned	YES	MUL	NULL	
+contas_recebers	6	categoria	enum('Consulta','Limpeza','Restauração','Endodontia','Ortodontia','Cirurgia','Prótese','Implante','Clareamento','Outros')	NO		Consulta	
+contas_recebers	7	valor_original	decimal(10,2)	NO		NULL	
+contas_recebers	8	valor_recebido	decimal(10,2)	NO		0.00	
+contas_recebers	9	valor_pendente	decimal(10,2)	NO		NULL	
+contas_recebers	10	data_vencimento	date	NO		NULL	
+contas_recebers	11	data_recebimento	date	YES		NULL	
+contas_recebers	12	status	enum('Pendente','Vencido','Recebido','Parcial')	NO	MUL	Pendente	
+contas_recebers	13	prioridade	enum('Baixa','Média','Alta','Crítica')	NO		Média	
+contas_recebers	14	forma_pagamento	varchar(255)	YES		NULL	
+contas_recebers	15	convenio	varchar(255)	YES		NULL	
+contas_recebers	16	observacoes	text	YES		NULL	
+contas_recebers	17	created_at	timestamp	YES		NULL	
+contas_recebers	18	updated_at	timestamp	YES		NULL	
+employees	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+employees	2	name	varchar(255)	NO	MUL	NULL	
+employees	3	phone	varchar(255)	NO		NULL	
+employees	4	email	varchar(255)	NO	UNI	NULL	
+employees	5	role	varchar(255)	NO	MUL	NULL	
+employees	6	photo	varchar(255)	YES		NULL	
+employees	7	cro	varchar(255)	YES		NULL	
+employees	8	specialty	varchar(255)	YES		NULL	
+employees	9	active	tinyint(1)	NO	MUL	1	
+employees	10	hire_date	date	YES		NULL	
+employees	11	birth_date	date	YES		NULL	
+employees	12	address	text	YES		NULL	
+employees	13	salary	decimal(10,2)	YES		NULL	
+employees	14	commission_rate	decimal(5,2)	YES		NULL	
+employees	15	created_at	timestamp	YES		NULL	
+employees	16	updated_at	timestamp	YES		NULL	
+employees	17	user_id	bigint unsigned	YES	MUL	NULL	
+failed_jobs	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+failed_jobs	2	uuid	varchar(255)	NO	UNI	NULL	
+failed_jobs	3	connection	text	NO		NULL	
+failed_jobs	4	queue	text	NO		NULL	
+failed_jobs	5	payload	longtext	NO		NULL	
+failed_jobs	6	exception	longtext	NO		NULL	
+failed_jobs	7	failed_at	timestamp	NO		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+fluxo_caixas	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+fluxo_caixas	2	tipo	enum('Entrada','Saída')	NO	MUL	NULL	
+fluxo_caixas	3	descricao	varchar(255)	NO		NULL	
+fluxo_caixas	4	categoria	varchar(255)	NO		NULL	
+fluxo_caixas	5	valor	decimal(10,2)	NO		NULL	
+fluxo_caixas	6	data_movimento	date	NO		NULL	
+fluxo_caixas	7	forma_pagamento	varchar(255)	NO		NULL	
+fluxo_caixas	8	documento	varchar(255)	YES		NULL	
+fluxo_caixas	9	conta_receber_id	bigint unsigned	YES	MUL	NULL	
+fluxo_caixas	10	conta_pagar_id	bigint unsigned	YES	MUL	NULL	
+fluxo_caixas	11	paciente_id	bigint unsigned	YES	MUL	NULL	
+fluxo_caixas	12	supplier_id	bigint unsigned	YES	MUL	NULL	
+fluxo_caixas	13	observacoes	text	YES		NULL	
+fluxo_caixas	14	created_by	varchar(255)	YES		NULL	
+fluxo_caixas	15	created_at	timestamp	YES		NULL	
+fluxo_caixas	16	updated_at	timestamp	YES		NULL	
+forma_pagamentos	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+forma_pagamentos	2	nome	varchar(255)	NO	MUL	NULL	
+forma_pagamentos	3	taxa	decimal(8,2)	NO		0.00	
+forma_pagamentos	4	created_at	timestamp	YES		NULL	
+forma_pagamentos	5	updated_at	timestamp	YES		NULL	
+group_anamneses	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+group_anamneses	2	nome	varchar(255)	NO		NULL	
+group_anamneses	3	descricao	text	YES		NULL	
+group_anamneses	4	created_at	timestamp	YES		NULL	
+group_anamneses	5	updated_at	timestamp	YES		NULL	
+job_batches	1	id	varchar(255)	NO	PRI	NULL	
+job_batches	2	name	varchar(255)	NO		NULL	
+job_batches	3	total_jobs	int	NO		NULL	
+job_batches	4	pending_jobs	int	NO		NULL	
+job_batches	5	failed_jobs	int	NO		NULL	
+job_batches	6	failed_job_ids	longtext	NO		NULL	
+job_batches	7	options	mediumtext	YES		NULL	
+job_batches	8	cancelled_at	int	YES		NULL	
+job_batches	9	created_at	int	NO		NULL	
+job_batches	10	finished_at	int	YES		NULL	
+jobs	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+jobs	2	queue	varchar(255)	NO	MUL	NULL	
+jobs	3	payload	longtext	NO		NULL	
+jobs	4	attempts	tinyint unsigned	NO		NULL	
+jobs	5	reserved_at	int unsigned	YES		NULL	
+jobs	6	available_at	int unsigned	NO		NULL	
+jobs	7	created_at	int unsigned	NO		NULL	
+migrations	1	id	int unsigned	NO	PRI	NULL	auto_increment
+migrations	2	migration	varchar(255)	NO		NULL	
+migrations	3	batch	int	NO		NULL	
+odontogramas	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+odontogramas	2	paciente_id	bigint unsigned	NO	UNI	NULL	
+odontogramas	3	dentes	longtext	NO		NULL	
+odontogramas	4	observacoes_gerais	text	YES		NULL	
+odontogramas	5	created_at	timestamp	YES		NULL	
+odontogramas	6	updated_at	timestamp	YES		NULL	
+pacientes	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+pacientes	2	name	varchar(255)	NO	MUL	NULL	
+pacientes	3	convenio	varchar(255)	YES		NULL	
+pacientes	4	telefone	varchar(255)	YES	MUL	NULL	
+pacientes	5	idade	int	YES		NULL	
+pacientes	6	data_nascimento	date	NO		NULL	
+pacientes	7	responsavel	varchar(255)	YES		NULL	
+pacientes	8	cpf_responsavel	varchar(255)	YES		NULL	
+pacientes	9	celular	varchar(255)	YES		NULL	
+pacientes	10	estado	varchar(2)	YES		NULL	
+pacientes	11	sexo	varchar(20)	YES		NULL	
+pacientes	12	profissao	varchar(255)	YES		NULL	
+pacientes	13	estado_civil	varchar(255)	YES		NULL	
+pacientes	14	tipo_sanguineo	varchar(10)	YES		NULL	
+pacientes	15	pessoa	varchar(20)	YES		NULL	
+pacientes	16	cpf_cnpj	varchar(255)	YES	UNI	NULL	
+pacientes	17	email	varchar(255)	YES	UNI	NULL	
+pacientes	18	cep	varchar(20)	YES		NULL	
+pacientes	19	rua	varchar(255)	YES		NULL	
+pacientes	20	numero	varchar(255)	YES		NULL	
+pacientes	21	complemento	varchar(255)	YES		NULL	
+pacientes	22	bairro	varchar(255)	YES		NULL	
+pacientes	23	cidade	varchar(255)	YES		NULL	
+pacientes	24	observacoes	text	YES		NULL	
+pacientes	25	audit_trail	json	YES		NULL	
+pacientes	26	data_source	varchar(255)	NO		manual	
+pacientes	27	created_at	timestamp	YES	MUL	NULL	
+pacientes	28	updated_at	timestamp	YES	MUL	NULL	
+password_reset_tokens	1	email	varchar(255)	NO	PRI	NULL	
+password_reset_tokens	2	token	varchar(255)	NO		NULL	
+password_reset_tokens	3	created_at	timestamp	YES		NULL	
+patient_procedures	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+patient_procedures	2	paciente_id	bigint unsigned	NO	MUL	NULL	
+patient_procedures	3	procedure_id	bigint unsigned	NO	MUL	NULL	
+patient_procedures	4	scheduling_id	bigint unsigned	YES	MUL	NULL	
+patient_procedures	5	date	date	NO		NULL	
+patient_procedures	6	status	varchar(255)	NO		scheduled	
+patient_procedures	7	value	decimal(10,2)	NO		NULL	
+patient_procedures	8	notes	text	YES		NULL	
+patient_procedures	9	created_at	timestamp	YES		NULL	
+patient_procedures	10	updated_at	timestamp	YES		NULL	
+personal_access_tokens	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+personal_access_tokens	2	tokenable_type	varchar(255)	NO	MUL	NULL	
+personal_access_tokens	3	tokenable_id	bigint unsigned	NO		NULL	
+personal_access_tokens	4	name	varchar(255)	NO		NULL	
+personal_access_tokens	5	token	varchar(64)	NO	UNI	NULL	
+personal_access_tokens	6	abilities	text	YES		NULL	
+personal_access_tokens	7	last_used_at	timestamp	YES		NULL	
+personal_access_tokens	8	expires_at	timestamp	YES		NULL	
+personal_access_tokens	9	created_at	timestamp	YES		NULL	
+personal_access_tokens	10	updated_at	timestamp	YES		NULL	
+procedures	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+procedures	2	name	varchar(255)	NO	MUL	NULL	
+procedures	3	value	decimal(10,2)	NO	MUL	NULL	
+procedures	4	time	varchar(255)	NO		NULL	
+procedures	5	accepts_agreement	tinyint(1)	NO		0	
+procedures	6	preparation	varchar(255)	YES		NULL	
+procedures	7	description	text	YES		NULL	
+procedures	8	category	varchar(255)	YES	MUL	NULL	
+procedures	9	active	tinyint(1)	NO	MUL	1	
+procedures	10	requires_anesthesia	tinyint(1)	NO		0	
+procedures	11	complexity_level	int	NO		1	
+procedures	12	created_at	timestamp	YES		NULL	
+procedures	13	updated_at	timestamp	YES		NULL	
+reports	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+reports	2	name	varchar(255)	NO		NULL	
+reports	3	type	varchar(255)	NO		NULL	
+reports	4	description	text	NO		NULL	
+reports	5	data	json	NO		NULL	
+reports	6	period_start	varchar(255)	NO		NULL	
+reports	7	period_end	varchar(255)	NO		NULL	
+reports	8	generated_by	varchar(255)	YES		NULL	
+reports	9	is_scheduled	tinyint(1)	NO		0	
+reports	10	schedule_frequency	varchar(255)	YES		NULL	
+reports	11	last_generated_at	timestamp	YES		NULL	
+reports	12	created_at	timestamp	YES		NULL	
+reports	13	updated_at	timestamp	YES		NULL	
+schedulings	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+schedulings	2	patient_id	bigint unsigned	NO	MUL	NULL	
+schedulings	3	professional_id	bigint unsigned	NO	MUL	NULL	
+schedulings	4	procedure_id	bigint unsigned	NO	MUL	NULL	
+schedulings	5	date	date	NO	MUL	NULL	
+schedulings	6	time	varchar(5)	NO		NULL	
+schedulings	7	return	tinyint(1)	NO		0	
+schedulings	8	obs	text	YES		NULL	
+schedulings	9	status	varchar(255)	NO	MUL	scheduled	
+schedulings	10	scheduled_at	datetime	YES		NULL	
+schedulings	11	duration	int	YES		NULL	
+schedulings	12	confirmed_at	datetime	YES		NULL	
+schedulings	13	canceled_at	datetime	YES		NULL	
+schedulings	14	cancellation_reason	text	YES		NULL	
+schedulings	15	created_at	timestamp	YES	MUL	NULL	
+schedulings	16	updated_at	timestamp	YES		NULL	
+sessions	1	id	varchar(255)	NO	PRI	NULL	
+sessions	2	user_id	bigint unsigned	YES	MUL	NULL	
+sessions	3	ip_address	varchar(45)	YES		NULL	
+sessions	4	user_agent	text	YES		NULL	
+sessions	5	payload	longtext	NO		NULL	
+sessions	6	last_activity	int	NO	MUL	NULL	
+suppliers	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+suppliers	2	name	varchar(255)	NO		NULL	
+suppliers	3	email	varchar(255)	NO		NULL	
+suppliers	4	phone	varchar(255)	NO		NULL	
+suppliers	5	cnpj	varchar(255)	NO		NULL	
+suppliers	6	pix	varchar(255)	YES		NULL	
+suppliers	7	pix_key_type	varchar(255)	YES		NULL	
+suppliers	8	street	varchar(255)	NO		NULL	
+suppliers	9	number	varchar(255)	NO		NULL	
+suppliers	10	complement	varchar(255)	YES		NULL	
+suppliers	11	neighborhood	varchar(255)	NO		NULL	
+suppliers	12	city	varchar(255)	NO		NULL	
+suppliers	13	state	varchar(255)	NO		NULL	
+suppliers	14	cep	varchar(255)	NO		NULL	
+suppliers	15	created_at	timestamp	YES		NULL	
+suppliers	16	updated_at	timestamp	YES		NULL	
+treatment_plans	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+treatment_plans	2	created_at	timestamp	YES		NULL	
+treatment_plans	3	updated_at	timestamp	YES		NULL	
+users	1	id	bigint unsigned	NO	PRI	NULL	auto_increment
+users	2	name	varchar(255)	NO		NULL	
+users	3	email	varchar(255)	NO	UNI	NULL	
+users	4	email_verified_at	timestamp	YES		NULL	
+users	5	password	varchar(255)	NO		NULL	
+users	6	remember_token	varchar(100)	YES		NULL	
+users	7	created_at	timestamp	YES		NULL	
+users	8	updated_at	timestamp	YES		NULL	

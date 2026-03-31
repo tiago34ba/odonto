@@ -1,0 +1,406 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePatientRequest;
+use App\Http\Requests\UpdatePatientRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
+use Symfony\Component\HttpFoundation\Response;
+use App\Models\Paciente;
+use Illuminate\Support\Facades\Http;
+
+
+class PacienteController extends Controller
+{
+    /**
+     * Display a listing of the patients.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $perPage = $request->input('per_page', 15);
+
+        $patients = Paciente::query()
+            ->when($request->filled('name'), fn ($query, $name) => $query->byName($name))
+            ->when($request->filled('convenio'), fn ($query, $convenio) => $query->byConvenio($convenio))
+            ->when($request->filled('min_age'), fn ($query) => $query->byAgeRange($request->input('min_age'), $request->input('max_age', 120)))
+            ->orderBy('name')
+            ->paginate($perPage);
+
+        // Retorna dados sem criptografia/mascaramento
+        return response()->json([
+            'data' => $patients->items(),
+            'pagination' => [
+                'current_page' => $patients->currentPage(),
+                'last_page' => $patients->lastPage(),
+                'per_page' => $patients->perPage(),
+                'total' => $patients->total(),
+                'from' => $patients->firstItem(),
+                'to' => $patients->lastItem(),
+            ]
+        ]);
+    }
+
+    /**
+     * Store a newly created patient in storage.
+     *
+     * @param StorePatientRequest $request
+     * @return JsonResponse
+     */
+    public function store(StorePatientRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $pick = static function (array $data, array $keys, $default = null) {
+            foreach ($keys as $key) {
+                if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+                    return $data[$key];
+                }
+            }
+
+            return $default;
+        };
+
+        // Mapear campos do frontend para o backend
+        $mappedData = [
+            'name' => $pick($validated, ['name']),
+            'convenio' => $pick($validated, ['convenio', 'insurance']),
+            'telefone' => $pick($validated, ['telefone', 'phone']),
+            'idade' => $pick($validated, ['idade', 'age']),
+            'data_nascimento' => $pick($validated, ['data_nascimento', 'nascimento']),
+            'responsavel' => $pick($validated, ['responsavel']),
+            'cpf_responsavel' => $pick($validated, ['cpf_responsavel', 'cpfResponsavel']),
+            'celular' => $pick($validated, ['celular', 'telefone2']),
+            'estado' => $pick($validated, ['estado']),
+            'sexo' => $pick($validated, ['sexo']),
+            'profissao' => $pick($validated, ['profissao']),
+            'estado_civil' => $pick($validated, ['estado_civil', 'estadoCivil']),
+            'tipo_sanguineo' => $pick($validated, ['tipo_sanguineo', 'tipoSanguineo']),
+            'pessoa' => $pick($validated, ['pessoa']),
+            'cpf_cnpj' => $pick($validated, ['cpf_cnpj', 'cpfCnpj']),
+            'email' => $pick($validated, ['email']),
+            'cep' => $pick($validated, ['cep']),
+            'rua' => $pick($validated, ['rua']),
+            'numero' => $pick($validated, ['numero']),
+            'complemento' => $pick($validated, ['complemento']),
+            'bairro' => $pick($validated, ['bairro']),
+            'cidade' => $pick($validated, ['cidade']),
+            'observacoes' => $pick($validated, ['observacoes']),
+        ];
+
+            try {
+                $patient = Paciente::create($mappedData);
+            } catch (QueryException $e) {
+                if ($e->getCode() === '23000') {
+                    $rawMessage = $e->getMessage();
+
+                    if (str_contains($rawMessage, 'pacientes_cpf_cnpj_unique')) {
+                        return response()->json([
+                            'message' => 'CPF/CNPJ já cadastrado. Use outro documento ou edite o paciente existente.',
+                            'errors' => [
+                                'cpf_cnpj' => ['CPF/CNPJ já cadastrado.'],
+                            ],
+                        ], 422);
+                    }
+
+                    if (str_contains($rawMessage, 'pacientes_email_unique')) {
+                        return response()->json([
+                            'message' => 'E-mail já cadastrado. Use outro e-mail ou edite o paciente existente.',
+                            'errors' => [
+                                'email' => ['E-mail já cadastrado.'],
+                            ],
+                        ], 422);
+                    }
+
+                    return response()->json([
+                        'message' => 'Já existe um paciente com os mesmos dados únicos. Revise CPF/CNPJ e e-mail.',
+                    ], 422);
+                }
+
+                throw $e;
+            }
+
+        return response()->json([
+            'message' => 'Paciente criado com sucesso',
+            'data' => $patient,
+        ], Response::HTTP_CREATED);
+    }
+
+    /**
+     * Display the specified patient.
+     *
+     * @param Paciente $patient
+     * @return JsonResponse
+     */
+    public function show(Paciente $patient): JsonResponse
+    {
+        return response()->json($patient);
+    }
+
+    /**
+     * Update the specified patient in storage.
+     *
+     * @param UpdatePatientRequest $request
+     * @param Paciente $patient
+     * @return JsonResponse
+     */
+    public function update(UpdatePatientRequest $request, Paciente $patient): JsonResponse
+    {
+        $patient->update($request->validated());
+        return response()->json($patient);
+    }
+
+    /**
+     * Remove the specified patient from storage.
+     *
+     * @param Paciente $patient
+     * @return JsonResponse
+     */
+    public function destroy(Paciente $patient): JsonResponse
+    {
+        $patient->delete();
+        return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Get a list of available convenios.
+     *
+     * @return JsonResponse
+     */
+    public function convenios(): JsonResponse
+    {
+        return response()->json([
+            'convenios' => [
+                'Amil',
+                'ASSIM Saúde',
+                'Athena Saúde',
+                'Bradesco Saúde',
+                'Care Plus',
+                'FSFX',
+                'Hapvida',
+                'MedSênior',
+                'OdontoPrev',
+                'Omint',
+                'Particular',
+                'Porto Seguro Saúde',
+                'Prevent Senior',
+                'São Cristovão',
+                'Sul América Saúde',
+                'Trasmontano',
+                'Unimed Belo Horizonte',
+                'Unimed Campinas',
+                'Unimed Campo Grande',
+                'Unimed Cuiabá',
+                'Unimed Curitiba',
+                'Unimed de Belém',
+                'Unimed de Blumenau',
+                'Unimed de Ribeirão Preto',
+                'Unimed de Santos',
+                'Unimed do Estado de Santa Catarina',
+                'Unimed FESP',
+                'Unimed Fortaleza',
+                'Unimed Goiânia',
+                'Unimed Grande Florianópolis',
+                'Unimed João Pessoa',
+                'Unimed Leste Fluminense',
+                'Unimed Londrina',
+                'Unimed Maceió',
+                'Unimed Natal',
+                'Unimed Nacional',
+                'Unimed Nordeste RS',
+                'Unimed Paraná',
+                'Unimed Piracicaba',
+                'Unimed Porto Alegre',
+                'Unimed Recife',
+                'Unimed Regional Maringá',
+                'Unimed Saúde',
+                'Unimed São José dos Campos',
+                'Unimed São José do Rio Preto',
+                'Unimed Sergipe',
+                'Unimed Sorocaba',
+                'Unimed Teresina',
+                'Unimed Uberlândia',
+                'Unimed Vitória',
+                'Vision Med',
+            ],
+        ]);
+    }
+
+    /**
+     * Get a list of available estados.
+     *
+     * @return JsonResponse
+     */
+    public function estados(): JsonResponse
+    {
+        return response()->json([
+            'estados' => [
+                'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+                'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+                'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+            ],
+        ]);
+    }
+
+    /**
+     * Get a list of available sexos.
+     *
+     * @return JsonResponse
+     */
+    public function sexos(): JsonResponse
+    {
+        return response()->json([
+            'sexos' => [
+                'Masculino',
+                'Feminino',
+                'Outro',
+            ],
+        ]);
+    }
+
+    /**
+     * Get a list of available estados civis.
+     *
+     * @return JsonResponse
+     */
+    public function estadosCivis(): JsonResponse
+    {
+        return response()->json([
+            'estados_civis' => [
+                'Solteiro(a)',
+                'Casado(a)',
+                'Divorciado(a)',
+                'Viúvo(a)',
+                'Outro',
+            ],
+        ]);
+    }
+
+    /**
+     * Get a list of available tipos sanguíneos.
+     *
+     * @return JsonResponse
+     */
+    public function tiposSanguineos(): JsonResponse
+    {
+        return response()->json([
+            'tipos_sanguineos' => [
+                'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-',
+            ],
+        ]);
+    }
+
+    /**
+     * Get patient statistics for dashboard.
+     *
+     * @return JsonResponse
+     */
+    public function statistics(): JsonResponse
+    {
+        $stats = [
+            'total_patients' => Paciente::count(),
+            'patients_by_convenio' => Paciente::selectRaw('convenio, count(*) as total')
+                ->groupBy('convenio')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'patients_by_age_group' => [
+                '0-17' => Paciente::whereBetween('idade', [0, 17])->count(),
+                '18-30' => Paciente::whereBetween('idade', [18, 30])->count(),
+                '31-50' => Paciente::whereBetween('idade', [31, 50])->count(),
+                '51-70' => Paciente::whereBetween('idade', [51, 70])->count(),
+                '70+' => Paciente::where('idade', '>', 70)->count(),
+            ],
+            'patients_by_gender' => Paciente::selectRaw('sexo, count(*) as total')
+                ->groupBy('sexo')
+                ->get(),
+            'recent_patients' => Paciente::orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(['id', 'name', 'created_at'])
+        ];
+
+        return response()->json([
+            'statistics' => $stats,
+            'generated_at' => now()->toISOString()
+        ]);
+    }
+
+    /**
+     * Search patients with advanced filters.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $query = Paciente::query();
+
+        // Filtros de busca
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('cpf_cnpj', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('convenio')) {
+            $query->byConvenio($request->input('convenio'));
+        }
+
+        if ($request->filled('sexo')) {
+            $query->where('sexo', $request->input('sexo'));
+        }
+
+        if ($request->filled('min_age') || $request->filled('max_age')) {
+            $minAge = $request->input('min_age', 0);
+            $maxAge = $request->input('max_age', 120);
+            $query->byAgeRange($minAge, $maxAge);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->input('estado'));
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $patients = $query->orderBy('name')->paginate($perPage);
+
+        return response()->json([
+            'data' => $patients->items(),
+            'pagination' => [
+                'current_page' => $patients->currentPage(),
+                'last_page' => $patients->lastPage(),
+                'per_page' => $patients->perPage(),
+                'total' => $patients->total(),
+            ],
+            'filters' => $request->only(['search', 'convenio', 'sexo', 'min_age', 'max_age', 'estado'])
+        ]);
+    }
+
+    /**
+     * Export patients data (sem mascaramento).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $format = $request->input('format', 'json');
+
+        $patients = Paciente::orderBy('name')->get();
+
+        return response()->json([
+            'data' => $patients,
+            'export_info' => [
+                'format' => $format,
+                'total_records' => $patients->count(),
+                'exported_at' => now()->toISOString(),
+                'exported_by' => \Illuminate\Support\Facades\Auth::user()?->email ?? 'system'
+            ]
+        ]);
+    }
+}
