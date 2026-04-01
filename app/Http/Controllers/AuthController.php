@@ -24,7 +24,9 @@ class AuthController extends Controller
             'device_name' => ['sometimes', 'string', 'max:255'],
         ]);
 
-        $accountKey = strtolower($validated['login']) . '|' . $request->ip();
+        $login = trim($validated['login']);
+
+        $accountKey = strtolower($login) . '|' . $request->ip();
         $ipKey = 'ip:' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($accountKey, self::ACCOUNT_MAX_ATTEMPTS) || RateLimiter::tooManyAttempts($ipKey, self::IP_MAX_ATTEMPTS)) {
@@ -43,8 +45,12 @@ class AuthController extends Controller
                 $acessosQuery->where('ativo', true)->select('id', 'codigo', 'grupo_acesso_id');
             }]);
         }])
-            ->where('email', $validated['login'])
-            ->orWhere('username', $validated['login'])
+            ->where(function ($query) use ($login) {
+                $query->where('email', $login)
+                    ->orWhere('username', $login)
+                    ->orWhere('nome', $login)
+                    ->orWhere('name', $login);
+            })
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {

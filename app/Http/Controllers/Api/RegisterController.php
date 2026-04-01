@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\GrupoAcesso;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -39,15 +40,21 @@ class RegisterController extends Controller
             return response()->json(['message' => 'Nome obrigatorio'], 422);
         }
 
-        $user = User::create([
-            'name' => $name,
-            'nome' => $nome,
-            'sobrenome' => $sobrenome,
-            'email' => $request->email,
-            'password' => Hash::make($password),
-            'grupo_acesso_id' => GrupoAcesso::where('ativo', true)->value('id'),
-            'ativo' => true,
-        ]);
+        $user = DB::transaction(function () use ($name, $nome, $sobrenome, $request, $password) {
+            // Lock de leitura para evitar corrida e garantir apenas o primeiro cadastro como admin SaaS.
+            $isFirstUser = ! User::query()->lockForUpdate()->exists();
+
+            return User::create([
+                'name' => $name,
+                'nome' => $nome,
+                'sobrenome' => $sobrenome,
+                'email' => $request->email,
+                'password' => Hash::make($password),
+                'grupo_acesso_id' => GrupoAcesso::where('ativo', true)->value('id'),
+                'tipo' => $isFirstUser ? 'saas_admin' : null,
+                'ativo' => true,
+            ]);
+        });
 
         return response()->json(['success' => true, 'user' => $user], 201);
     }
