@@ -1,0 +1,11 @@
+id,nome,email,password
+1,Usuario,usuarioteste.20260326213317@example.com,$2y$12$bGWnvLn1XFmksQyt6A/bxuolLfKK5hRVqjfEFzBdAp2XHvyrRfRCG
+2,Usuario,teste.login@ssait.local,$2y$12$/q0bPdC8BgyCnsYWHy8IvuxRTzqs43EXIJAJSPCOMr7z4o3PhpRz6
+3,Admin,admin.odonto@ssait.local,$2y$12$kXUYW9JKJtwaHhSiCwXYyOiLdlAwzgFhcEumKE.vI0p6dxvEn4xKm
+4,Dentista,dentista.odonto@ssait.local,$2y$12$Z3MEqhjhN6IvHuUjOoe9.ewi6JKMIIWFzsJgMATtyszZ2RRZPLpKe
+5,Secretaria,secretaria.odonto@ssait.local,$2y$12$wyfHELRlB29tzxfTqQj9Ae.FpyBIh4ZHHq1SwsGmVvQDlvQtiSHO2
+6,Auxiliar,auxiliar.odonto@ssait.local,$2y$12$boAFsun2zb7M8zNZdYze3etfr.lXgueqzBFt9omQ39Gv.q0IXUvKm
+7,Faxineiro,faxineiro.odonto@ssait.local,$2y$12$ltUqt9JVR/2V/Nt6l4g.2O4A6yygyetzpaMAbA33KBIwFTojBqWKG
+8,Financeiro,financeiro.odonto@ssait.local,$2y$12$7LcZ2uwid/A.deeDOMIna.kGVmNTDOi6M0tErioIIpKZ8B0VpVp3e
+13,,paciente.portal.20260331190337@odonto.local,$2y$12$oZoyYBFJPM.HEKpK6xp6qutBORxGfIjEWyjVDUjYPlr.dUxQ23zyC
+14,,saasadmin@odonto.local,$2y$12$OzoviUE5GxmKDMq.X6cBtu9HygiLtY7Vm49R2E7rhOwubFDlXpnvC
