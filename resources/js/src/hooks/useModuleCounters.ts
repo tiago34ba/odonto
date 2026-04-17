@@ -20,7 +20,7 @@ export const useModuleCounters = (refreshInterval?: number) => {
   const fetchCounters = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Simulando dados dos módulos com contadores
       const moduleData: ModuleCounters = {
         'Pacientes': {
@@ -36,6 +36,11 @@ export const useModuleCounters = (refreshInterval?: number) => {
         'Funcionários': {
           total: 15,
           endpoint: '/pessoas/funcionarios',
+          loading: false
+        },
+        'Dentistas': {
+          total: 12,
+          endpoint: '/pessoas/dentistas',
           loading: false
         },
         'Agendamentos': {
@@ -117,11 +122,11 @@ export const useModuleCounters = (refreshInterval?: number) => {
     }
   }, [fetchCounters, refreshInterval]);
 
-  return { 
-    counters, 
-    loading, 
-    error, 
-    lastUpdated, 
-    refreshCounters 
+  return {
+    counters,
+    loading,
+    error,
+    lastUpdated,
+    refreshCounters
   };
 };

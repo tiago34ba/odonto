@@ -156,8 +156,10 @@ class ContasReceberController extends Controller
     /**
      * Atualizar conta a receber
      */
-    public function update(Request $request, ContasReceber $contasReceber): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+        $contasReceber = ContasReceber::findOrFail($id);
+
         $validated = $request->validate([
             'paciente_id' => 'required|exists:pacientes,id',
             'procedure_id' => 'required|exists:procedures,id',
@@ -236,8 +238,10 @@ class ContasReceberController extends Controller
     /**
      * Deletar conta a receber
      */
-    public function destroy(ContasReceber $contasReceber): JsonResponse
+    public function destroy($id): JsonResponse
     {
+        $contasReceber = ContasReceber::findOrFail($id);
+
         if ($contasReceber->valor_recebido > 0) {
             return response()->json([
                 'success' => false,

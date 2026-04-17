@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Dentista;
 use App\Models\Employee;
 use App\Models\Paciente;
 use App\Models\Procedure;
@@ -125,6 +126,22 @@ class PortalPacienteFlowTest extends TestCase
             'cro' => 'CRO-12345',
         ]);
 
+        Employee::create([
+            'name' => 'Recepcionista Portal',
+            'phone' => '11911112222',
+            'email' => 'recepcao.portal@example.com',
+            'role' => 'receptionist',
+            'active' => true,
+        ]);
+
+        Employee::create([
+            'name' => 'Dentista Inativo',
+            'phone' => '11933334444',
+            'email' => 'inativo.portal@example.com',
+            'role' => 'dentist',
+            'active' => false,
+        ]);
+
         $procedure = Procedure::create([
             'name' => 'Consulta Inicial',
             'value' => 120.50,
@@ -132,6 +149,13 @@ class PortalPacienteFlowTest extends TestCase
             'description' => 'Consulta clínica',
             'category' => 'Clínico',
             'active' => true,
+        ]);
+
+        Procedure::create([
+            'name' => 'Procedimento Inativo',
+            'value' => 50,
+            'time' => '30',
+            'active' => false,
         ]);
 
         Scheduling::create([
@@ -147,12 +171,15 @@ class PortalPacienteFlowTest extends TestCase
         $dentistas = $this->getJson('/api/portal/dentistas');
         $dentistas->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonFragment(['id' => $employee->id, 'name' => 'Dra. Ana']);
+            ->assertJsonFragment(['id' => $employee->id, 'name' => 'Dra. Ana'])
+            ->assertJsonMissing(['name' => 'Recepcionista Portal'])
+            ->assertJsonMissing(['name' => 'Dentista Inativo']);
 
         $procedimentos = $this->getJson('/api/portal/procedimentos');
         $procedimentos->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonFragment(['id' => $procedure->id, 'name' => 'Consulta Inicial']);
+            ->assertJsonFragment(['id' => $procedure->id, 'name' => 'Consulta Inicial'])
+            ->assertJsonMissing(['name' => 'Procedimento Inativo']);
 
         $horarios = $this->getJson('/api/portal/horarios-disponiveis?professional_id=' . $employee->id . '&date=' . now()->addDay()->toDateString() . '&procedure_id=' . $procedure->id);
 
@@ -164,6 +191,47 @@ class PortalPacienteFlowTest extends TestCase
         $this->assertIsArray($slots);
         $this->assertNotContains('09:00', $slots);
         $this->assertNotContains('09:30', $slots);
+    }
+
+    public function test_creating_dentist_funcionario_syncs_employee_for_portal_listing(): void
+    {
+        $admin = User::factory()->create([
+            'tipo' => 'saas_admin',
+            'ativo' => true,
+        ]);
+
+        $cargo = \App\Models\Cargo::create([
+            'nome' => 'Dentista Clínico Geral',
+            'ativo' => true,
+            'nivel_acesso' => 'medio',
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/pessoas/funcionarios', [
+            'name' => 'Dra. Nova',
+            'telefone' => '11999990000',
+            'email' => 'dra.nova@example.com',
+            'cargo_id' => $cargo->id,
+            'cro' => 'CRO-77777',
+            'status' => true,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.name', 'Dra. Nova');
+
+        $this->assertDatabaseHas('employees', [
+            'email' => 'dra.nova@example.com',
+            'name' => 'Dra. Nova',
+            'role' => 'dentist',
+            'active' => 1,
+            'cro' => 'CRO-77777',
+        ]);
+
+        $portalDentistas = $this->getJson('/api/portal/dentistas');
+
+        $portalDentistas->assertOk()
+            ->assertJsonFragment(['name' => 'Dra. Nova']);
     }
 
     public function test_patient_can_schedule_list_profile_and_cancel_own_appointment(): void
@@ -247,6 +315,79 @@ class PortalPacienteFlowTest extends TestCase
             'id' => $schedulingId,
             'status' => 'canceled',
             'cancellation_reason' => 'Imprevisto pessoal',
+        ]);
+    }
+
+    public function test_patient_cannot_schedule_outside_dentist_working_window(): void
+    {
+        $patientUser = User::factory()->create([
+            'email' => 'janela@example.com',
+            'password' => Hash::make('SenhaSegura123'),
+            'tipo' => 'paciente',
+            'ativo' => true,
+        ]);
+
+        $paciente = Paciente::factory()->create([
+            'name' => $patientUser->name,
+            'email' => $patientUser->email,
+            'user_id' => $patientUser->id,
+        ]);
+
+        $employee = Employee::create([
+            'name' => 'Dra. Janela',
+            'phone' => '11990001111',
+            'email' => 'janela.dentista@example.com',
+            'role' => 'dentist',
+            'active' => true,
+            'specialty' => 'Clinica Geral',
+            'cro' => 'CRO-9000',
+        ]);
+
+        Dentista::create([
+            'name' => 'Dra. Janela',
+            'email' => 'janela.dentista@example.com',
+            'cro' => 'CRO-9000',
+            'cro_uf' => 'SP',
+            'especialidade' => 'Clinica Geral',
+            'status' => true,
+            'intervalo_consulta' => 30,
+            'horarios_atendimento' => [
+                ['dia_semana' => 'segunda', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'terca', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'quarta', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'quinta', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'sexta', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'sabado', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'domingo', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+            ],
+        ]);
+
+        $procedure = Procedure::create([
+            'name' => 'Consulta Janela',
+            'value' => 100,
+            'time' => '60',
+            'active' => true,
+        ]);
+
+        Sanctum::actingAs($patientUser);
+
+        $response = $this->postJson('/api/portal/agendar', [
+            'professional_id' => $employee->id,
+            'procedure_id' => $procedure->id,
+            'date' => now()->addDay()->toDateString(),
+            'time' => '17:00',
+            'obs' => 'Tentativa fora da agenda',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Horario fora da agenda do dentista ou indisponivel para esta duracao.');
+
+        $this->assertDatabaseMissing('schedulings', [
+            'patient_id' => $paciente->id,
+            'professional_id' => $employee->id,
+            'date' => now()->addDay()->toDateString(),
+            'time' => '17:00',
         ]);
     }
 

@@ -21,3 +21,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local backups and temporary test payloads
+/backup_*.csv
+/backup_*.sql
+/mock_whatsapp_webhook.php

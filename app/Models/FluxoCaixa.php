@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FluxoCaixa extends Model
 {
-    protected $table = 'fluxo_caixa';
+    protected $table = 'fluxo_caixas';
 
     protected $fillable = [
         'tipo',             // 'entrada' ou 'saida'

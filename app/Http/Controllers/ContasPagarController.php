@@ -140,17 +140,59 @@ class ContasPagarController extends Controller
     /**
      * Atualizar conta a pagar
      */
-    public function update(Request $request, ContasPagar $contasPagar): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+        $contasPagar = ContasPagar::findOrFail($id);
+
         $validated = $request->validate([
             'descricao' => 'required|string|max:255',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'categoria' => 'required|string|max:100',
             'valor_original' => 'required|numeric|min:0',
+            'valor_pago' => 'nullable|numeric|min:0',
             'data_vencimento' => 'required|date',
+            'data_pagamento' => 'nullable|date',
+            'status' => 'nullable|in:Pendente,Vencido,Pago,Parcial',
             'prioridade' => 'required|in:Baixa,Média,Alta,Crítica',
+            'forma_pagamento' => 'nullable|string|max:100',
             'observacoes' => 'nullable|string'
         ]);
+
+        $valorOriginal = (float) ($validated['valor_original'] ?? $contasPagar->valor_original);
+        $valorPago = array_key_exists('valor_pago', $validated)
+            ? (float) $validated['valor_pago']
+            : (float) $contasPagar->valor_pago;
+
+        $valorPago = max(0, min($valorPago, $valorOriginal));
+        $status = $validated['status'] ?? null;
+
+        if ($status === 'Pago') {
+            $valorPago = $valorOriginal;
+            $validated['data_pagamento'] = $validated['data_pagamento'] ?? now()->toDateString();
+        } elseif ($status === 'Pendente' || $status === 'Vencido') {
+            $valorPago = 0;
+            $validated['data_pagamento'] = null;
+        }
+
+        $valorPendente = max(0, $valorOriginal - $valorPago);
+
+        if (!$status) {
+            if ($valorPendente <= 0) {
+                $status = 'Pago';
+            } elseif ($valorPago > 0) {
+                $status = 'Parcial';
+            } elseif (Carbon::parse($validated['data_vencimento'])->lt(Carbon::today())) {
+                $status = 'Vencido';
+            } else {
+                $status = 'Pendente';
+            }
+        } elseif ($status === 'Parcial' && $valorPago <= 0) {
+            $status = Carbon::parse($validated['data_vencimento'])->lt(Carbon::today()) ? 'Vencido' : 'Pendente';
+        }
+
+        $validated['valor_pago'] = $valorPago;
+        $validated['valor_pendente'] = $valorPendente;
+        $validated['status'] = $status;
 
         $contasPagar->update($validated);
 
@@ -219,8 +261,10 @@ class ContasPagarController extends Controller
     /**
      * Deletar conta a pagar
      */
-    public function destroy(ContasPagar $contasPagar): JsonResponse
+    public function destroy($id): JsonResponse
     {
+        $contasPagar = ContasPagar::findOrFail($id);
+
         if ($contasPagar->valor_pago > 0) {
             return response()->json([
                 'success' => false,
