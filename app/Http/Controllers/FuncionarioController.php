@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFuncionarioRequest;
 use App\Models\Funcionario;
 use App\Models\Cargo;
+use App\Services\PortalDentistSyncService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FuncionarioController extends Controller
 {
+    public function __construct(private readonly PortalDentistSyncService $portalDentistSyncService)
+    {
+    }
+
     /**
      * Lista todos os funcionários com paginação.
      */
@@ -78,6 +83,7 @@ class FuncionarioController extends Controller
 
         try {
             $funcionario = Funcionario::create($mappedData);
+            $this->portalDentistSyncService->syncFuncionario($funcionario->load('cargo'));
         } catch (QueryException $e) {
             if ($e->getCode() === '23000') {
                 $rawMessage = $e->getMessage();
@@ -116,6 +122,7 @@ class FuncionarioController extends Controller
     public function update(StoreFuncionarioRequest $request, Funcionario $funcionario): JsonResponse
     {
         $validated = $request->validated();
+        $originalEmail = $funcionario->email;
 
         $pick = static function (array $data, array $keys, $sentinel = '__ABSENT__') {
             foreach ($keys as $key) {
@@ -157,6 +164,7 @@ class FuncionarioController extends Controller
 
         try {
             $funcionario->update($updateData);
+            $this->portalDentistSyncService->syncFuncionario($funcionario->fresh()->load('cargo'), $originalEmail);
         } catch (QueryException $e) {
             if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'funcionarios_email_unique')) {
                 return response()->json([
@@ -178,6 +186,7 @@ class FuncionarioController extends Controller
      */
     public function destroy(Funcionario $funcionario): JsonResponse
     {
+        $this->portalDentistSyncService->deactivateByEmail($funcionario->email);
         $funcionario->delete();
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
@@ -210,7 +219,7 @@ class FuncionarioController extends Controller
                 ['nome' => $nomeCargo],
                 [
                     'descricao' => null,
-                    'nivel_acesso' => 1,
+                    'nivel_acesso' => 'medio',
                     'ativo' => true,
                 ]
             );

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Employee;
+use App\Models\Dentista;
 use App\Models\Paciente;
 use App\Models\Procedure;
 use App\Models\Scheduling;
@@ -109,6 +110,58 @@ class SchedulingApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonPath('message', 'Conflito de horário detectado');
+    }
+
+    public function test_store_blocks_scheduling_outside_dentist_working_window(): void
+    {
+        $paciente = Paciente::factory()->create();
+        $employee = Employee::create([
+            'name' => 'Dra. Janela',
+            'phone' => '11988887777',
+            'email' => 'dra.janela.' . uniqid() . '@mail.com',
+            'role' => 'dentist',
+            'cro' => '998877',
+        ]);
+
+        Dentista::create([
+            'name' => 'Dra. Janela',
+            'email' => $employee->email,
+            'cro' => '998877',
+            'cro_uf' => 'SP',
+            'especialidade' => 'Clinico Geral',
+            'intervalo_consulta' => 30,
+            'horarios_atendimento' => [
+                ['dia_semana' => 'segunda', 'ativo' => true, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'terca', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'quarta', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'quinta', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'sexta', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'sabado', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+                ['dia_semana' => 'domingo', 'ativo' => false, 'hora_inicio' => '08:00', 'hora_fim' => '12:00'],
+            ],
+            'status' => true,
+        ]);
+
+        $procedure = Procedure::create([
+            'name' => 'Consulta Janela',
+            'value' => 180,
+            'time' => 60,
+            'accepts_agreement' => true,
+        ]);
+        $targetDate = now()->next(Carbon::MONDAY)->toDateString();
+
+        $response = $this->postJson('/api/schedulings', [
+            'patient_id' => $paciente->id,
+            'professional_id' => $employee->id,
+            'procedure_id' => $procedure->id,
+            'date' => $targetDate,
+            'time' => '19:00',
+            'duration' => 60,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Horario fora da agenda do dentista ou indisponivel para esta duracao.');
     }
 
     public function test_update_blocks_duplicate_business_key(): void

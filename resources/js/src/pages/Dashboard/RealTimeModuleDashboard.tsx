@@ -24,12 +24,13 @@ const useModuleCounters = (refreshInterval?: number) => {
     const fetchCounters = async () => {
       try {
         setLoading(true);
-        
+
         // Simulando dados dos módulos com contadores
         const moduleData: ModuleCounters = {
           'Pacientes': { total: 1250, endpoint: '/pessoas/pacientes/PatientsPage' },
           'Usuários': { total: 25, endpoint: '/pessoas/usuarios' },
           'Funcionários': { total: 15, endpoint: '/pessoas/funcionarios' },
+          'Dentistas': { total: 12, endpoint: '/pessoas/dentistas' },
           'Agendamentos': { total: 450, endpoint: '/agendamentos' },
           'Procedimentos': { total: 180, endpoint: '/cadastros/procedimentos' },
           'Convênios': { total: 8, endpoint: '/cadastros/convenios' },
@@ -53,19 +54,19 @@ const useModuleCounters = (refreshInterval?: number) => {
     };
 
     fetchCounters();
-    
+
     if (refreshInterval && refreshInterval > 0) {
       const interval = setInterval(fetchCounters, refreshInterval);
       return () => clearInterval(interval);
     }
   }, [refreshInterval]);
 
-  return { 
-    counters, 
-    loading, 
-    error, 
-    lastUpdated, 
-    refreshCounters: () => {} 
+  return {
+    counters,
+    loading,
+    error,
+    lastUpdated,
+    refreshCounters: () => {}
   };
 };
 

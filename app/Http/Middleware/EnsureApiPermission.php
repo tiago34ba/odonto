@@ -120,6 +120,7 @@ class EnsureApiPermission
             'pessoas/pacientes' => ['paciente', 'patient'],
             'pessoas/employees' => ['employee', 'funcionario'],
             'pessoas/funcionarios' => ['funcionario', 'employee'],
+            'pessoas/dentistas' => ['dentista', 'dentist', 'funcionario', 'employee'],
             'pessoas/usuarios' => ['usuario', 'user'],
             'anamneses' => ['anamnese'],
             'procedures' => ['procedimento', 'procedure'],

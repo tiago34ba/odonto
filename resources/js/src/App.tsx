@@ -20,6 +20,7 @@ const Dashboard = React.lazy(() => import("./pages/Dashboard/DashboardCards"));
 const PatientsPage = React.lazy(() => import("./pages/Modulos/clientes/PatientsPage/PatientsPage"));
 const UsersPage = React.lazy(() => import("./pages/Modulos/Usuarios/UsersPage/UsersPage"));
 const FuncionariosPage = React.lazy(() => import("./pages/Modulos/funcionarios/FuncionariosPage/FuncionariosPage"));
+const DentistasPage = React.lazy(() => import("./pages/Modulos/dentistas/DentistasPage/DentistasPage"));
 const AgendamentosPage = React.lazy(() => import("./pages/Modulos/agendamentos/AgendamentosPage/AgendamentosPage"));
 const RelatorioAgendamentos = React.lazy(() => import("./pages/Modulos/agendamentos/RelatorioAgendamentos/RelatorioAgendamentos"));
 const RelatorioProcedimentos = React.lazy(() => import("./pages/Modulos/agendamentos/RelatorioProcedimentos/RelatorioProcedimentos"));
@@ -97,6 +98,7 @@ const App: React.FC = () => {
                       <Route path="/pessoas/pacientes/PatientsPage" element={<PatientsPage />} />
                       <Route path="/pessoas/usuarios" element={<UsersPage />} />
                       <Route path="/pessoas/funcionarios" element={<FuncionariosPage />} />
+                      <Route path="/pessoas/dentistas" element={<DentistasPage />} />
                       <Route path="/agendamentos" element={<AgendamentosPage />} />
                       <Route path="/agendamentos/relatorio-agendamentos" element={<RelatorioAgendamentos />} />
                       <Route path="/agendamentos/relatorio-procedimentos" element={<RelatorioProcedimentos />} />

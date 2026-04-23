@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Scheduling;
 use App\Models\Paciente;
 use App\Models\Employee;
+use App\Models\Dentista;
 use App\Models\Procedure;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\SchedulingRequest;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 class SchedulingController extends Controller
 {
@@ -138,6 +141,9 @@ class SchedulingController extends Controller
             'duration' => 'nullable|integer|min:15|max:480', // 15min a 8h
         ]);
 
+        $procedure = Procedure::findOrFail((int) $validated['procedure_id']);
+        $duration = (int) ($validated['duration'] ?? $this->resolveProcedureDuration($procedure));
+
         // Regra de negócio: não permitir agendamento duplicado
         if ($this->hasDuplicateScheduling(
             $validated['patient_id'],
@@ -157,7 +163,7 @@ class SchedulingController extends Controller
             $validated['professional_id'],
             $validated['date'],
             $validated['time'],
-            $validated['duration'] ?? 60
+            $duration
         );
 
         if ($conflict) {
@@ -167,10 +173,41 @@ class SchedulingController extends Controller
             ], 422);
         }
 
-        $scheduling = Scheduling::create(array_merge($validated, [
-            'status'       => 'scheduled',
-            'scheduled_at' => now(),
-        ]));
+        $availableSlots = $this->getAvailableSlots(
+            $validated['professional_id'],
+            $validated['date'],
+            $duration
+        );
+
+        if (! in_array($validated['time'], $availableSlots, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Horario fora da agenda do dentista ou indisponivel para esta duracao.',
+            ], 422);
+        }
+
+        try {
+            $scheduling = DB::transaction(function () use ($validated, $duration) {
+                return Scheduling::create(array_merge($validated, [
+                    'status'       => 'scheduled',
+                    'scheduled_at' => now(),
+                    'duration'     => $duration,
+                ]));
+            });
+        } catch (QueryException $e) {
+            $isDuplicate = ($e->getCode() === '23000')
+                || str_contains(mb_strtolower($e->getMessage()), 'uq_schedulings_business_unique');
+
+            if ($isDuplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este horario acabou de ser reservado. Tente outro horario.',
+                ], 422);
+            }
+
+            throw $e;
+        }
+
         $scheduling->load(['paciente', 'profissional', 'procedimento']);
 
         return response()->json([
@@ -227,6 +264,13 @@ class SchedulingController extends Controller
         $date = $validated['date'] ?? $scheduling->date;
         $time = $validated['time'] ?? $scheduling->time;
 
+        $duration = $validated['duration'] ?? $scheduling->duration;
+        if ((int) $duration <= 0) {
+            $procedure = Procedure::find((int) $procedureId);
+            $duration = $procedure ? $this->resolveProcedureDuration($procedure) : 60;
+        }
+        $duration = (int) $duration;
+
         if ($this->hasDuplicateScheduling(
             $patientId,
             $professionalId,
@@ -246,7 +290,6 @@ class SchedulingController extends Controller
             $professionalId = $validated['professional_id'] ?? $scheduling->professional_id;
             $date = $validated['date'] ?? $scheduling->date;
             $time = $validated['time'] ?? $scheduling->time;
-            $duration = $validated['duration'] ?? $scheduling->duration ?? 60;
 
             $conflict = $this->checkScheduleConflict($professionalId, $date, $time, $duration, $scheduling->id);
 
@@ -258,7 +301,35 @@ class SchedulingController extends Controller
             }
         }
 
-        $scheduling->update($validated);
+        $availableSlots = $this->getAvailableSlots($professionalId, $date, $duration, $scheduling->id);
+
+        if (! in_array($time, $availableSlots, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Horario fora da agenda do dentista ou indisponivel para esta duracao.',
+            ], 422);
+        }
+
+        $validated['duration'] = $duration;
+
+        try {
+            DB::transaction(function () use ($scheduling, $validated) {
+                $scheduling->update($validated);
+            });
+        } catch (QueryException $e) {
+            $isDuplicate = ($e->getCode() === '23000')
+                || str_contains(mb_strtolower($e->getMessage()), 'uq_schedulings_business_unique');
+
+            if ($isDuplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este horario acabou de ser reservado. Tente outro horario.',
+                ], 422);
+            }
+
+            throw $e;
+        }
+
         $scheduling->load(['paciente', 'profissional', 'procedimento']);
 
         return response()->json([
@@ -488,24 +559,134 @@ class SchedulingController extends Controller
     /**
      * Obter horários disponíveis
      */
-    private function getAvailableSlots($professionalId, $date, $duration = 60): array
+    private function getAvailableSlots($professionalId, $date, $duration = 60, $excludeId = null): array
     {
         $durationMinutes = (int) $duration;
 
-        // Horário de funcionamento padrão: 8h às 18h
-        $workStart = Carbon::parse($date . ' 08:00');
-        $workEnd = Carbon::parse($date . ' 18:00');
+        $employee = Employee::find((int) $professionalId);
+        $dentista = $employee ? $this->resolveDentistaFromEmployee($employee) : null;
+        $window = $this->resolveWorkingWindow((string) $date, $dentista);
+
+        if ($window === null) {
+            return [];
+        }
+
+        $workStart = $window['start'];
+        $workEnd = $window['end'];
+        $slotStep = $window['step'];
 
         $slots = [];
         $current = $workStart->copy();
 
         while ($current->copy()->addMinutes($durationMinutes)->lte($workEnd)) {
-            if (!$this->checkScheduleConflict($professionalId, $date, $current->format('H:i'), $durationMinutes)) {
+            if (! $this->checkScheduleConflict($professionalId, $date, $current->format('H:i'), $durationMinutes, $excludeId)) {
                 $slots[] = $current->format('H:i');
             }
-            $current->addMinutes(30); // Intervalo de 30 minutos entre slots
+            $current->addMinutes($slotStep);
         }
 
         return $slots;
+    }
+
+    private function resolveProcedureDuration(Procedure $procedure): int
+    {
+        $duration = $procedure->getAttribute('duration');
+
+        if (is_numeric($duration) && (int) $duration > 0) {
+            return max(15, (int) $duration);
+        }
+
+        $time = $procedure->time;
+
+        if (is_numeric($time) && (int) $time > 0) {
+            return max(15, (int) $time);
+        }
+
+        if (is_string($time) && preg_match('/(\d+)/', $time, $matches) === 1) {
+            return max(15, (int) $matches[1]);
+        }
+
+        return 60;
+    }
+
+    private function resolveDentistaFromEmployee(Employee $employee): ?Dentista
+    {
+        $cro = trim((string) $employee->cro);
+        $email = trim((string) $employee->email);
+
+        if ($cro !== '') {
+            $dentista = Dentista::query()->where('cro', $cro)->first();
+            if ($dentista) {
+                return $dentista;
+            }
+        }
+
+        if ($email !== '') {
+            $dentista = Dentista::query()->where('email', $email)->first();
+            if ($dentista) {
+                return $dentista;
+            }
+        }
+
+        return Dentista::query()->where('name', $employee->name)->first();
+    }
+
+    /**
+     * @return array{start:Carbon,end:Carbon,step:int}|null
+     */
+    private function resolveWorkingWindow(string $date, ?Dentista $dentista): ?array
+    {
+        $dateCarbon = Carbon::parse($date);
+        $dayMap = [
+            Carbon::MONDAY => 'segunda',
+            Carbon::TUESDAY => 'terca',
+            Carbon::WEDNESDAY => 'quarta',
+            Carbon::THURSDAY => 'quinta',
+            Carbon::FRIDAY => 'sexta',
+            Carbon::SATURDAY => 'sabado',
+            Carbon::SUNDAY => 'domingo',
+        ];
+
+        $dayKey = $dayMap[$dateCarbon->dayOfWeek] ?? null;
+        if (! $dayKey) {
+            return null;
+        }
+
+        $step = max(5, (int) ($dentista?->intervalo_consulta ?? 30));
+
+        if ($dentista && is_array($dentista->horarios_atendimento)) {
+            $daySchedule = collect($dentista->horarios_atendimento)
+                ->first(fn ($item) => is_array($item) && (($item['dia_semana'] ?? null) === $dayKey));
+
+            if (is_array($daySchedule)) {
+                $ativo = filter_var($daySchedule['ativo'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                if (! $ativo) {
+                    return null;
+                }
+
+                $horaInicio = (string) ($daySchedule['hora_inicio'] ?? '08:00');
+                $horaFim = (string) ($daySchedule['hora_fim'] ?? '18:00');
+
+                if ($horaFim <= $horaInicio) {
+                    return null;
+                }
+
+                return [
+                    'start' => Carbon::parse($date . ' ' . $horaInicio),
+                    'end' => Carbon::parse($date . ' ' . $horaFim),
+                    'step' => $step,
+                ];
+            }
+        }
+
+        if ($dateCarbon->isSunday()) {
+            return null;
+        }
+
+        return [
+            'start' => Carbon::parse($date . ' 08:00'),
+            'end' => Carbon::parse($date . ' 18:00'),
+            'step' => 30,
+        ];
     }
 }

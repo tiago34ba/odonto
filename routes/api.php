@@ -24,12 +24,35 @@ use App\Http\Controllers\CargoController;
 use App\Http\Controllers\AcessoController;
 use App\Http\Controllers\GrupoAcessoController;
 use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\DentistaController;
+use App\Http\Controllers\HorarioFuncionamentoController;
 use App\Http\Controllers\TreatmentPlanController;
 use App\Http\Controllers\CardPaymentController;
 use App\Http\Controllers\PixController;
 use App\Http\Controllers\PortalPacienteController;
 use App\Http\Controllers\SaasMensalidadeController;
 use App\Http\Controllers\SaasSolicitacaoController;
+use App\Http\Controllers\Saas\SaasBillingModuloController;
+use App\Http\Controllers\Saas\SaasTenantModuloController;
+use App\Http\Controllers\Saas\SaasSecurityModuloController;
+use App\Http\Controllers\Saas\SaasSupportModuloController;
+use App\Http\Controllers\Saas\SaasBiModuloController;
+use App\Http\Controllers\Chamados\ChamadosCategoriaController;
+use App\Http\Controllers\Chamados\ChamadosCampoPersonalizadoController;
+use App\Http\Controllers\Chamados\ChamadosRespostaPredefinidaController;
+use App\Http\Controllers\Chamados\ChamadosStatusPersonalizadoController;
+use App\Http\Controllers\Chamados\ChamadosVisualizacaoController;
+use App\Http\Controllers\Helpdesk\HelpdeskAreaController;
+use App\Http\Controllers\Helpdesk\HelpdeskPriorityController;
+use App\Http\Controllers\Helpdesk\HelpdeskProblemTypeController;
+use App\Http\Controllers\Helpdesk\HelpdeskClassController;
+use App\Http\Controllers\Helpdesk\HelpdeskUserController;
+use App\Http\Controllers\Helpdesk\HelpdeskProblemController;
+use App\Http\Controllers\Helpdesk\HelpdeskSolutionController;
+use App\Http\Controllers\Helpdesk\HelpdeskTicketController;
+use App\Http\Controllers\Helpdesk\HelpdeskAttendanceController;
+use App\Http\Controllers\Helpdesk\HelpdeskPreRegistrationController;
+use App\Http\Controllers\Helpdesk\HelpdeskAuditTrailController;
 
 // Cadastro via RegisterController
 Route::post('/register', [RegisterController::class, 'register']);
@@ -116,6 +139,25 @@ Route::prefix('pessoas/funcionarios')->group(function () {
     Route::patch('/{funcionario}', [FuncionarioController::class, 'update']);
     Route::delete('/{funcionario}', [FuncionarioController::class, 'destroy']);
     Route::get('/{funcionario}', [FuncionarioController::class, 'show']);
+});
+
+Route::prefix('pessoas/dentistas')->group(function () {
+    Route::get('/reference/especialidades', [DentistaController::class, 'especialidades']);
+    Route::get('/reference/estados', [DentistaController::class, 'estados']);
+    Route::get('/', [DentistaController::class, 'index']);
+    Route::post('/', [DentistaController::class, 'store']);
+    Route::put('/{dentista}', [DentistaController::class, 'update']);
+    Route::patch('/{dentista}', [DentistaController::class, 'update']);
+    Route::delete('/{dentista}', [DentistaController::class, 'destroy']);
+    Route::get('/{dentista}', [DentistaController::class, 'show']);
+});
+
+Route::prefix('horarios-funcionamento')->group(function () {
+    Route::get('/', [HorarioFuncionamentoController::class, 'index']);
+    Route::post('/', [HorarioFuncionamentoController::class, 'store']);
+    Route::put('/{id}', [HorarioFuncionamentoController::class, 'update']);
+    Route::patch('/{id}', [HorarioFuncionamentoController::class, 'update']);
+    Route::delete('/{id}', [HorarioFuncionamentoController::class, 'destroy']);
 });
 
 Route::prefix('pessoas/usuarios')->group(function () {
@@ -323,5 +365,74 @@ Route::prefix('saas/solicitacoes')->middleware(['auth:sanctum'])->group(function
     Route::patch('/{id}/aprovar',             [SaasSolicitacaoController::class, 'aprovar']);
     Route::patch('/{id}/rejeitar',            [SaasSolicitacaoController::class, 'rejeitar']);
     Route::patch('/{id}/confirmar-pagamento', [SaasSolicitacaoController::class, 'confirmarPagamento']);
+});
+
+Route::prefix('saas/modulos')->group(function () {
+    Route::prefix('billing')->group(function () {
+        Route::get('/', [SaasBillingModuloController::class, 'index']);
+        Route::post('/', [SaasBillingModuloController::class, 'store']);
+        Route::put('/{id}', [SaasBillingModuloController::class, 'update']);
+        Route::patch('/{id}', [SaasBillingModuloController::class, 'update']);
+        Route::delete('/{id}', [SaasBillingModuloController::class, 'destroy']);
+    });
+
+    Route::prefix('tenants')->group(function () {
+        Route::get('/', [SaasTenantModuloController::class, 'index']);
+        Route::post('/', [SaasTenantModuloController::class, 'store']);
+        Route::put('/{id}', [SaasTenantModuloController::class, 'update']);
+        Route::patch('/{id}', [SaasTenantModuloController::class, 'update']);
+        Route::delete('/{id}', [SaasTenantModuloController::class, 'destroy']);
+    });
+
+    Route::prefix('security')->group(function () {
+        Route::get('/', [SaasSecurityModuloController::class, 'index']);
+        Route::post('/', [SaasSecurityModuloController::class, 'store']);
+        Route::put('/{id}', [SaasSecurityModuloController::class, 'update']);
+        Route::patch('/{id}', [SaasSecurityModuloController::class, 'update']);
+        Route::delete('/{id}', [SaasSecurityModuloController::class, 'destroy']);
+    });
+
+    Route::prefix('support')->group(function () {
+        Route::get('/', [SaasSupportModuloController::class, 'index']);
+        Route::post('/', [SaasSupportModuloController::class, 'store']);
+        Route::put('/{id}', [SaasSupportModuloController::class, 'update']);
+        Route::patch('/{id}', [SaasSupportModuloController::class, 'update']);
+        Route::delete('/{id}', [SaasSupportModuloController::class, 'destroy']);
+    });
+
+    Route::prefix('bi')->group(function () {
+        Route::get('/', [SaasBiModuloController::class, 'index']);
+        Route::post('/', [SaasBiModuloController::class, 'store']);
+        Route::put('/{id}', [SaasBiModuloController::class, 'update']);
+        Route::patch('/{id}', [SaasBiModuloController::class, 'update']);
+        Route::delete('/{id}', [SaasBiModuloController::class, 'destroy']);
+    });
+});
+
+Route::prefix('saas/chamados')->group(function () {
+    Route::apiResource('categorias', ChamadosCategoriaController::class);
+    Route::apiResource('campos-personalizados', ChamadosCampoPersonalizadoController::class);
+    Route::apiResource('respostas-predefinidas', ChamadosRespostaPredefinidaController::class);
+    Route::apiResource('status-personalizado', ChamadosStatusPersonalizadoController::class);
+    Route::apiResource('visualizacoes', ChamadosVisualizacaoController::class);
+});
+
+Route::prefix('saas/helpdesk')->group(function () {
+    Route::apiResource('areas', HelpdeskAreaController::class);
+    Route::apiResource('prioridades', HelpdeskPriorityController::class);
+    Route::apiResource('tipos-problema', HelpdeskProblemTypeController::class);
+    Route::apiResource('classes', HelpdeskClassController::class);
+    Route::apiResource('usuarios', HelpdeskUserController::class);
+    Route::apiResource('problemas', HelpdeskProblemController::class);
+    Route::apiResource('solucoes', HelpdeskSolutionController::class);
+    Route::apiResource('atendimentos', HelpdeskAttendanceController::class);
+    Route::apiResource('pre-cadastros', HelpdeskPreRegistrationController::class);
+    Route::apiResource('audittrail', HelpdeskAuditTrailController::class);
+
+    Route::get('chamados/relatorio', [HelpdeskTicketController::class, 'index']);
+    Route::get('chamados/exportar', [HelpdeskTicketController::class, 'index']);
+    Route::post('chamados/{id}/copiar', [HelpdeskTicketController::class, 'copy']);
+    Route::patch('chamados/{id}/confirmar', [HelpdeskTicketController::class, 'confirm']);
+    Route::apiResource('chamados', HelpdeskTicketController::class);
 });
 }); // fecha middleware auth:sanctum + api.permission

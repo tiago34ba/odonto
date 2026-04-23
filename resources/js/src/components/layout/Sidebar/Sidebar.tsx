@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import '@fortawesome/fontawesome-free/css/all.min.css';
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./Sidebar.css";
 import { useNavigate } from "react-router-dom";
 
-// Interfaces para menus e submenus
 interface Menu {
-  title?: string; // Tornar o título opcional
+  title?: string;
   path?: string;
   submenus?: Menu[];
   isDivider?: boolean;
@@ -36,9 +35,7 @@ const hasAnyPermission = (user: StoredUser | null, requiredPermissions?: string[
       ? user?.permissions
       : [];
 
-  // Mantem compatibilidade quando backend ainda nao envia permissoes.
   if (perms.length === 0) return true;
-
   if (perms.includes("*")) return true;
 
   return requiredPermissions.some((permission) => perms.includes(permission));
@@ -51,45 +48,42 @@ const filterMenusByPermission = (menus: Menu[], user: StoredUser | null): Menu[]
 
       if (menu.submenus && menu.submenus.length > 0) {
         const visibleSubmenus = filterMenusByPermission(menu.submenus, user).filter((submenu) => !submenu.isDivider);
-
-        if (visibleSubmenus.length === 0) {
-          return null;
-        }
+        if (visibleSubmenus.length === 0) return null;
 
         return {
           ...menu,
           submenus: visibleSubmenus,
         };
-            { title: "Funcionários", path: "/dashboard/pessoas/funcionarios", requiredPermissions: ["STAFF_VIEW", "STAFF_MANAGE"] },
+      }
 
-            { title: "Fornecedores", path: "/dashboard/cadastros/fornecedores", requiredPermissions: ["SUPPLIERS_VIEW", "SUPPLIERS_MANAGE"] },
+      if (!hasAnyPermission(user, menu.requiredPermissions)) {
+        return null;
+      }
+
+      return menu;
     })
     .filter((menu): menu is Menu => Boolean(menu));
 
-  // Remove separadores no inicio/fim e separadores consecutivos.
   return filtered.filter((menu, index, arr) => {
     if (!menu.isDivider) return true;
-            { title: "Convênios", path: "/dashboard/cadastros/convenios", requiredPermissions: ["AGREEMENTS_VIEW", "AGREEMENTS_MANAGE"] },
-            { title: "Itens Anamnese", path: "/dashboard/cadastros/itens-anamnese", requiredPermissions: ["ANAMNESE_ITEMS_VIEW", "ANAMNESE_ITEMS_MANAGE"] },
-            { title: "Grupos Anamnese", path: "/dashboard/cadastros/grupos-anamnese", requiredPermissions: ["ANAMNESE_GROUPS_VIEW", "ANAMNESE_GROUPS_MANAGE"] },
-            { title: "formas_pgto", path: "/dashboard/cadastros/formas-pgto", requiredPermissions: ["PAYMENT_METHODS_VIEW", "PAYMENT_METHODS_MANAGE"] },
-            { title: "frequencias", path: "/dashboard/cadastros/frequencias", requiredPermissions: ["FREQUENCIES_VIEW", "FREQUENCIES_MANAGE"] },
-            { title: "Cargos", path: "/dashboard/cadastros/cargos", requiredPermissions: ["CARGOS_VIEW", "CARGOS_MANAGE"] },
+    const prev = arr[index - 1];
+    const next = arr[index + 1];
+    return Boolean(prev && !prev.isDivider && next && !next.isDivider);
+  });
 };
 
-// Componente para o separador de menu
 const MenuDivider: React.FC = () => <div className="menu-divider"></div>;
 
-// Componente recursivo para renderizar menus e submenus
 const RecursiveMenu: React.FC<{ menu: Menu }> = ({ menu }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Mapeamento de ícones para cada menu e submenu
   const menuIcons: { [key: string]: string } = {
     Dashboard: "fa-home",
     Pessoas: "fa-users",
     Pacientes: "fa-user-injured",
+    Dentista: "fa-user-md",
+    Dentistas: "fa-user-md",
     Funcionários: "fa-user-tie",
     Úsuarios: "fa-user-shield",
     Fornecedores: "fa-truck",
@@ -132,7 +126,7 @@ const RecursiveMenu: React.FC<{ menu: Menu }> = ({ menu }) => {
   return (
     <>
       {menu.isDivider && <MenuDivider />}
-      {menu.title && ( // Verifica se o menu possui título antes de renderizar
+      {menu.title && (
         <li>
           <span
             className="menu-item"
@@ -161,7 +155,6 @@ const RecursiveMenu: React.FC<{ menu: Menu }> = ({ menu }) => {
   );
 };
 
-// Componente principal Sidebar
 const Sidebar: React.FC = () => {
   const user = parseUserData();
 
@@ -172,6 +165,7 @@ const Sidebar: React.FC = () => {
       title: "Pessoas",
       submenus: [
         { title: "Pacientes", path: "/dashboard/pessoas/pacientes/PatientsPage", requiredPermissions: ["PATIENTS_VIEW", "PATIENTS_MANAGE"] },
+        { title: "Dentista", path: "/dashboard/pessoas/dentistas" },
         { title: "Funcionários", path: "/dashboard/pessoas/funcionarios" },
         { title: "Úsuarios", path: "/dashboard/pessoas/usuarios", requiredPermissions: ["USERS_MANAGE"] },
         { title: "Fornecedores", path: "/dashboard/cadastros/fornecedores" },
@@ -209,19 +203,19 @@ const Sidebar: React.FC = () => {
         { title: "Consulta", path: "/dashboard/financeiro/consulta", requiredPermissions: ["FINANCE_DASHBOARD_VIEW"] },
       ],
     },
-    { isDivider: true, title: "" }, // Divisor abaixo de "Financeiro"
+    { isDivider: true, title: "" },
     { title: "Consultas", path: "/dashboard/consultas", requiredPermissions: ["CONSULTAS_VIEW"] },
     { title: "Horários", path: "/dashboard/horarios", requiredPermissions: ["HORARIOS_VIEW"] },
     { title: "Minhas Comissões", path: "/dashboard/minhas-comissoes", requiredPermissions: ["COMISSOES_SELF_VIEW"] },
-    { isDivider: true, title: "" }, // Divisor abaixo de "Minhas Comissões"
+    { isDivider: true, title: "" },
     { title: "Odontogramas", path: "/dashboard/odontogramas", requiredPermissions: ["ODONTOGRAM_VIEW", "ODONTOGRAM_MANAGE"] },
     { title: "Tratamentos", path: "/dashboard/tratamentos", requiredPermissions: ["TREATMENTS_MANAGE", "TREATMENTS_ASSIST"] },
     { title: "Orçamentos", path: "/dashboard/orcamentos", requiredPermissions: ["ORCAMENTOS_VIEW", "ORCAMENTOS_MANAGE"] },
-    { isDivider: true, title: "" }, // Divisor abaixo de "Orçamentos"
+    { isDivider: true, title: "" },
     { title: "Caixas (Aberto)", path: "/dashboard/caixas-aberto", requiredPermissions: ["FINANCE_CASHFLOW_VIEW"] },
     { title: "Tarefas / Agenda", path: "/dashboard/tarefas-agenda", requiredPermissions: ["TASKS_VIEW"] },
     { title: "Anotações", path: "/dashboard/anotacoes", requiredPermissions: ["NOTES_VIEW"] },
-    { isDivider: true, title: "" }, // Divisor abaixo de "Anotações"
+    { isDivider: true, title: "" },
     {
       title: "Relatórios",
       submenus: [
